@@ -10,13 +10,13 @@ import modelo.Servidor;
 import vista.VentanaServidor;
 
 
-public class Controlador{
+public class ControladorServidor{
 
 	private VentanaServidor vista;
-	private String IP_Servidor = null;
-	private int Puerto_Servidor;
+	private String IP_Servidor = "192.168.1.45";
+	private int Puerto_Servidor = 1234;
 	
-	public Controlador() {
+	public ControladorServidor() {
 	}
 	
 	public VentanaServidor getVista() {
@@ -24,10 +24,10 @@ public class Controlador{
 	}
 	
 	public void Iniciar() {
-		IP_Servidor = crearIP();
+		//IP_Servidor = crearIP();
 		Puerto_Servidor = 1234;
 		vista = new VentanaServidor(IP_Servidor,Puerto_Servidor);
-		Servidor.getInstancia().Iniciar(IP_Servidor,Puerto_Servidor);
+		Servidor.getInstancia().Iniciar();
 		
 	}
 	
@@ -56,5 +56,7 @@ public class Controlador{
 		
 		return null;
 	}
+	
+	
 
 }

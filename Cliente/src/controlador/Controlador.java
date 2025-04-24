@@ -14,6 +14,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Enumeration;
 
+import excepciones.NicknameYaRegistradoException;
+import excepciones.VentanaCerradaSinSeleccionadosException;
 import modelo.Contacto.Contacto;
 import modelo.Contacto.IVerConversacion;
 import modelo.usuario.IFuncionalidadUsuario;
@@ -21,13 +23,13 @@ import modelo.usuario.Usuario;
 import vista.VentanaChat;
 
 public class Controlador implements ActionListener{
-	IFuncionalidadUsuario usuario = Usuario.getInstancia();
+	IFuncionalidadUsuario usuario;
 	private IVista vista;
 	
 	private String IP_Usuario = null;
 	
-	public Controlador() {
-		
+	public Controlador() throws IOException {
+		this.usuario = Usuario.getInstancia();
 	}
 
 	public IVista getVista(){
@@ -74,7 +76,7 @@ public class Controlador implements ActionListener{
 		return null;
 	}
 	
-	public void Iniciar() {
+	public void Iniciar() throws IOException {
 		IP_Usuario = crearIP();
 		vista = new VentanaChat(IP_Usuario);
 		vista.addActionListener(this);
@@ -86,29 +88,28 @@ public class Controlador implements ActionListener{
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		try {
 			DireccionYPuertoEnUso(IP_Usuario,puerto);
-			this.usuario.conectar(nombre, IP_Usuario, puerto); //IConectar
+			this.usuario.Registrarse(nombre);
 			vista.conectado();
 		} catch (BindException e) { //puerto ya en uso
 			vista.onFalloPuertoYaEnUso();
 		} catch (IllegalArgumentException e) { //puerto fuera de rango
 			vista.onFalloPuertoFueraRango();
+		} catch (NicknameYaRegistradoException e) { //nickname ya registrado en el servidor
+			vista.onFalloNicknameYaRegistrado();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
 	private void agregar() {
-		String nombreContacto = this.vista.getNombreContactoText();
-		String IPContacto = this.vista.getIpContactoText();
-		System.out.println("IP: " + IPContacto);
-		int puertoContacto = Integer.parseInt(this.vista.getPuertoContactoText());
-		System.out.println("Puerto: " + puertoContacto);
 		try {
-			UsuarioExistente(IPContacto,puertoContacto);
-			Contacto nuevoContacto = new Contacto(nombreContacto,IPContacto,puertoContacto);
-			this.usuario.agendarContacto(nuevoContacto); //IAgendar
-			vista.ActualizaListaContactos();
-			vista.OnRegistroContactoExitoso();
+			try {
+				this.usuario.agendarContacto();
+				vista.ActualizaListaContactos();
+				vista.OnRegistroContactoExitoso();
+			} catch (VentanaCerradaSinSeleccionadosException e) {
+				//se cierra la ventana sin tener que actualizar las vistas
+			}
 		} catch (IllegalArgumentException e) { //puerto fuera de rango
 			vista.onFalloPuertoFueraRango();
 		} catch (IOException e) {
@@ -123,18 +124,18 @@ public class Controlador implements ActionListener{
 		vista.ContactoSeleccionadoEsChat();
 	}
 	
-	private void enviar() {
+	private void enviar() throws IOException {
 		String msg = vista.getTecladoText();
 		if(!msg.equalsIgnoreCase("")) {
 			try {
 				this.usuario.Envia(vista.getContactoChat(), msg);
+				vista.getContactoChat().SetCantidadMensajesSinLeer(0);
+				vista.setTecladoText("");
+				vista.CargarChat(vista.getContactoChat().mostrarMensajes());
+				vista.ActualizaListaContactos();
 			} catch (IOException e) {
 				vista.OnFalloEnvioMensaje();
 			}
-			vista.getContactoChat().SetCantidadMensajesSinLeer(0);
-			vista.setTecladoText("");
-			vista.CargarChat(vista.getContactoChat().mostrarMensajes());
-			vista.ActualizaListaContactos();
 		}
 	}
 	
@@ -151,7 +152,11 @@ public class Controlador implements ActionListener{
 			hablar();
 		}
 		else if(comando.equalsIgnoreCase("ENVIAR")) {
-			enviar();
+			try {
+				enviar();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
 		else {
 			

@@ -19,6 +19,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.JList;
@@ -402,6 +403,11 @@ public class VentanaChat extends JFrame implements IVista  {
 	@Override
 	public void onFalloPuertoSinUso() {
 		new JNotification("No hay usuario utilizando esa direccion.");
+	}
+	
+	@Override
+	public void onFalloNicknameYaRegistrado() {
+		new JNotification("Nickname ya registrado en el servidor.");
 	}
 
 	@Override

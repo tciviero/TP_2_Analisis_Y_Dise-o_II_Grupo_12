@@ -1,6 +1,7 @@
 package vista;
 
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import modelo.Contacto.Contacto;
 
@@ -15,7 +16,7 @@ public interface IVista extends INotificable{
 	void setTecladoText(String text);
 	void CargarChat(String mensajes);
 	Contacto getContactoSeleccionado();
-	void ActualizaListaContactos();
+	void ActualizaListaContactos() throws IOException;
 	void conectado();
 	void ContactoSeleccionadoEsChat();
 	Contacto getContactoChat();
@@ -24,4 +25,5 @@ public interface IVista extends INotificable{
 	void onFalloPuertoYaEnUso();
 	void onFalloPuertoFueraRango();
 	void onFalloPuertoSinUso();
+	void onFalloNicknameYaRegistrado();
 }

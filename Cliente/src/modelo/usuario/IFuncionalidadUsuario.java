@@ -1,5 +1,7 @@
 package modelo.usuario;
 
-public interface IFuncionalidadUsuario extends IConectar, IEnviar, IRecibir, IAgendar {
+public interface IFuncionalidadUsuario extends IRegistrarse, IEnviar, IRecibir, IAgendar {
+
+	void escucharMensajes();
 
 }
