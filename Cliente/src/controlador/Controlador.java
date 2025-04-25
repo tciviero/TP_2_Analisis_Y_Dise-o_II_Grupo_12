@@ -12,24 +12,26 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
-import excepciones.NicknameYaRegistradoException;
-import excepciones.VentanaCerradaSinSeleccionadosException;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import modelo.Contacto.Contacto;
 import modelo.Contacto.IVerConversacion;
 import modelo.usuario.IFuncionalidadUsuario;
 import modelo.usuario.Usuario;
 import vista.VentanaChat;
 
-public class Controlador implements ActionListener{
-	IFuncionalidadUsuario usuario;
+public class Controlador implements ActionListener, ListSelectionListener{
+	IFuncionalidadUsuario usuario = Usuario.getInstancia();
 	private IVista vista;
 	
 	private String IP_Usuario = null;
 	
-	public Controlador() throws IOException {
-		this.usuario = Usuario.getInstancia();
+	public Controlador() {
+		
 	}
 
 	public IVista getVista(){
@@ -76,46 +78,28 @@ public class Controlador implements ActionListener{
 		return null;
 	}
 	
-	public void Iniciar() throws IOException {
+	public void Iniciar() {
 		IP_Usuario = crearIP();
 		vista = new VentanaChat(IP_Usuario);
 		vista.addActionListener(this);
+		vista.addListSelectionListener(this);
 		Usuario.getInstancia().AgregarSuscriptor(vista);
 	}
 
-	private void conectar() {
+	private void registrar() {
+		vista.conectado();
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
-		try {
-			DireccionYPuertoEnUso(IP_Usuario,puerto);
-			this.usuario.Registrarse(nombre);
-			vista.conectado();
-		} catch (BindException e) { //puerto ya en uso
-			vista.onFalloPuertoYaEnUso();
-		} catch (IllegalArgumentException e) { //puerto fuera de rango
-			vista.onFalloPuertoFueraRango();
-		} catch (NicknameYaRegistradoException e) { //nickname ya registrado en el servidor
-			vista.onFalloNicknameYaRegistrado();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		//intento conectarme al servidor, si ok, recibo lista de contactos
+		//try {
+			//usuario.conectar(nombre, crearIP(), puerto);
+		//} catch (IOException e) {
+			// TODO Auto-generated catch block
+		//	e.printStackTrace();
+		//}
+
 	}
 	
-	private void agregar() {
-		try {
-			try {
-				this.usuario.agendarContacto();
-				vista.ActualizaListaContactos();
-				vista.OnRegistroContactoExitoso();
-			} catch (VentanaCerradaSinSeleccionadosException e) {
-				//se cierra la ventana sin tener que actualizar las vistas
-			}
-		} catch (IllegalArgumentException e) { //puerto fuera de rango
-			vista.onFalloPuertoFueraRango();
-		} catch (IOException e) {
-			vista.onFalloPuertoSinUso();
-		}
-	}
 	
 	private void hablar() {
 		IVerConversacion contactoSeleccionado = vista.getContactoSeleccionado();
@@ -124,42 +108,52 @@ public class Controlador implements ActionListener{
 		vista.ContactoSeleccionadoEsChat();
 	}
 	
-	private void enviar() throws IOException {
+	private void enviar() {
 		String msg = vista.getTecladoText();
 		if(!msg.equalsIgnoreCase("")) {
 			try {
 				this.usuario.Envia(vista.getContactoChat(), msg);
-				vista.getContactoChat().SetCantidadMensajesSinLeer(0);
-				vista.setTecladoText("");
-				vista.CargarChat(vista.getContactoChat().mostrarMensajes());
-				vista.ActualizaListaContactos();
 			} catch (IOException e) {
 				vista.OnFalloEnvioMensaje();
 			}
+			vista.getContactoChat().SetCantidadMensajesSinLeer(0);
+			vista.setTecladoText("");
+			vista.CargarChat(vista.getContactoChat().mostrarMensajes());
+			vista.ActualizaListaContactos();
 		}
+	}
+	
+	private void inicioSesion() {
+		//envio para iniciar sesion y recibir mensajes pendientes, etc
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String comando = e.getActionCommand();
-		if(comando.equalsIgnoreCase("CONECTAR")) {
-			conectar();
+		if(comando.equalsIgnoreCase("REGISTRAR")) {
+			registrar();
 		}
-		else if(comando.equalsIgnoreCase("AGREGAR")) {
-			agregar();
+		else if(comando.equalsIgnoreCase("INICIAR SESION")) {
+			inicioSesion();
 		}
 		else if(comando.equalsIgnoreCase("HABLAR")) {
 			hablar();
 		}
 		else if(comando.equalsIgnoreCase("ENVIAR")) {
-			try {
-				enviar();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+			enviar();
 		}
 		else {
 			
+		}
+	}
+
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		if(!e.getValueIsAdjusting()) { 
+			Contacto contacto = vista.getConversacionSelected();
+			if(contacto != null) {
+				//MUESTRO CHAT DE CONVERSACION
+			}
 		}
 	}
 
