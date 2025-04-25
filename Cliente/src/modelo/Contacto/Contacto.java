@@ -6,15 +6,14 @@ import modelo.Mensaje;
 
 
 public class Contacto implements IFuncionalidadContacto {
-	//private int puerto;
-	//private String ip;
-	private String nickName;
+	private int puerto;
+	private String nickName, ip;
 	private ArrayList<Mensaje> mensajes;
 	private int cantidadMensajesSinLeer;
 	
-	public Contacto(String nombre){
-		//this.puerto = puerto;
-		//this.ip = ip;
+	public Contacto(String nombre, String ip, int puerto){
+		this.puerto = puerto;
+		this.ip = ip;
 		this.nickName = nombre;
 		this.mensajes = new ArrayList<Mensaje>();
 	}
@@ -36,13 +35,13 @@ public class Contacto implements IFuncionalidadContacto {
 		this.nickName = nuevo;
 	}
 
-	/*public int getPuerto() {
+	public int getPuerto() {
 		return puerto;
 	}
 
 	public String getIp() {
 		return ip;
-	}*/
+	}
 	
 	@Override
 	public String toString() {
@@ -63,6 +62,10 @@ public class Contacto implements IFuncionalidadContacto {
 	public void addMensaje(String nombreMensaje, String texto, boolean elMensajeEsPropio) {
 		mensajes.add(new Mensaje(nombreMensaje,texto, elMensajeEsPropio));
 		cantidadMensajesSinLeer++;
+	}
+	
+	public ArrayList<Mensaje> getMensajes() {
+		return mensajes;
 	}
 
 }

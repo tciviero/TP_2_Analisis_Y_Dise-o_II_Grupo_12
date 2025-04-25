@@ -3,36 +3,30 @@ package modelo.usuario;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+
 
 import modelo.Contacto.Contacto;
 import modelo.Contacto.IActualizarMensajes;
 import vista.INotificable;
-import excepciones.NicknameYaRegistradoException;
-import excepciones.VentanaCerradaSinSeleccionadosException;
-
 
 public class Usuario implements IFuncionalidadUsuario {
-	private static final String IP_SERVIDOR = "192.168.1.45";
-	private static final int PUERTO_SERVIDOR = 1234;
 	private int puerto;
 	private String nickName,ip;
 	private ArrayList<Contacto> contactos;
+	private ArrayList<Contacto> conversaciones;
 	private static Usuario instancia = null;
 	private ServerSocket serverSocket;
 	private ArrayList<INotificable> suscriptores;
 	private boolean ejecutando = false;
+	private final int PUERTO_SERVIDOR = 10;
 	private Socket socket;
-	private DataOutputStream out;
-	private DataInputStream in;
-	private CountDownLatch latchAgendamiento;
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
-		this.contactos = new ArrayList<Contacto>();
 	}
 	
 	public void AgregarSuscriptor(INotificable nuevoSuscriptor) {
@@ -57,92 +51,132 @@ public class Usuario implements IFuncionalidadUsuario {
 		return instancia;
 	}
 	
+	public void Iniciar(String Nombre, String ip, int puerto) throws IOException {
+		this.puerto = puerto;
+		this.ip = ip;
+		this.nickName = Nombre;
+		this.contactos = new ArrayList<Contacto>();
+		this.conversaciones = new ArrayList<Contacto>();
+		Conectar();
+		enviarRequestRegistro();
+	}
+	
+	private void enviarRequestRegistro() throws IOException {
+		if(!socket.isClosed()) {
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "Registrar" + "`" + nickName;
+			out.writeUTF(mensajeRegistro);
+		}
+	}
+	
+	private void enviarRequestInicioSesion() throws IOException {
+		if(!socket.isClosed()) {
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "Iniciar" + "`" + nickName;
+			out.writeUTF(mensajeRegistro);
+		}
+	}
+	
+	private void enviarRequestMensaje(String mensaje, String destinatario) throws IOException {
+		if(!socket.isClosed()) {
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
+			out.writeUTF(mensajeRegistro);
+		}
+	}
+	
+	
 	@Override
 	public void NuevoMensajeRecibido(String[] arrayMensaje) {
-		String comando = arrayMensaje[0];
-		System.out.println("mensaje que recibe: " + comando);
-		if(!comando.equalsIgnoreCase("ping123")) { //este comando se usa para testear si esta conectado el usuario
-			if(comando.equalsIgnoreCase("MENSAJE")) {
-				String nick_emisor = arrayMensaje[1];
-				System.out.println("nick emisor: " + nick_emisor + " nick receptor: " + this.nickName);
-				String textoMensaje = arrayMensaje[2];
-				Contacto contactoMensaje = this.getContacto(nick_emisor); 
-				int numAuxiliarNombre = 1;
-				if(contactoMensaje != null) {
-					contactoMensaje.addMensaje(nick_emisor,textoMensaje, false); //revisar
-				}else {
-					while(NombreYaUsado(nick_emisor)) {
-						nick_emisor = nick_emisor + "(" + numAuxiliarNombre + ")";
-						numAuxiliarNombre++;
-					}
-					Contacto nuevoContacto  = new Contacto(nick_emisor);
-					nuevoContacto.addMensaje(nick_emisor,textoMensaje, false);
-					contactos.add(nuevoContacto);
-				}
-				EventoNuevoMensajeRecibido();
-			} else if(comando.equalsIgnoreCase("AGENDAR_USUARIO")) {
-				for (int i=1;i<arrayMensaje.length;i++) {
-				    System.out.println("agenda al usuario: " + arrayMensaje[i]);
-				    this.agregarContacto(arrayMensaje[i]);
-				}
-				if (latchAgendamiento != null)
-			        latchAgendamiento.countDown(); // levanta la barrera
-			} else if(comando.equalsIgnoreCase("VENTANA_CERRADA")) {
-				if (latchAgendamiento != null)
-			        latchAgendamiento.countDown(); // levanta la barrera
+		String nombreMensaje = arrayMensaje[0];
+		if(!nombreMensaje.equalsIgnoreCase("ping123")) { //este nombre se usa para testear si esta conectado el usuario
+			String ipMensaje = arrayMensaje[1];
+			int puertoMensaje = Integer.parseInt(arrayMensaje[2]);
+			String textoMensaje = arrayMensaje[3];
+			Contacto contactoMensaje = getContacto(ipMensaje, puertoMensaje);
+			int numAuxiliarNombre = 1;
+			String nuevoNombre = nombreMensaje;
+			if(contactoMensaje != null) {
+				contactoMensaje.addMensaje(nombreMensaje,textoMensaje, false);
 			}
+			else {
+				while(NombreYaUsado(nuevoNombre)) {
+					nuevoNombre = nombreMensaje + "(" + numAuxiliarNombre + ")";
+					numAuxiliarNombre++;
+				}
+				Contacto nuevoContacto  = new Contacto(nuevoNombre, ipMensaje, puertoMensaje);
+				nuevoContacto.addMensaje(nombreMensaje,textoMensaje, false);
+				contactos.add(nuevoContacto);
+			}
+			EventoNuevoMensajeRecibido();	
 		}
 	}
 	
 	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
 		destinatario.addMensaje(nickName,texto, true);
 	}
+	
+	public void Conectar() throws IOException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
+		new Thread(() -> {
+			EscucharMensajesServidor(socket);
+		}).start();
+	}
+	
+	private void EscucharMensajesServidor(Socket socket){
+		 try {
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			
+			while(true) {
+				String data = in.readUTF();
+				String[] dataArray = data.split("`");
+				
+				String respuesta = dataArray[0];
+				
+				switch(respuesta) {
+					case "Res-registro":
+						if(dataArray[1] == "OK") {
+							//registro exitoso
+						}
+						else {
+							//error registro
+						}
+					case "Res-inicio":
+						if(dataArray[1] == "OK") {
+							//inicio exitoso
+						}
+						else {
+							//error inicio
+						}
+					case "Res-envio":
+						if(dataArray[1] == "OK") {
+							//envio exitoso
+						}
+						else {
+							//error envio
+						}
+					case "Directorio":
+						//Llega la lista de contactos, que son solo strings con los nicknames
+						int cantidadContactos = Integer.parseInt(dataArray[1]);
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	@Override
 	public void Envia(Contacto destinatario, String texto) throws IOException {
-		String mensaje = "MENSAJE" + "`"+ nickName + "`" + texto + "`" + destinatario.getNickName();
+		Socket clientSocket = new Socket();
+		clientSocket.connect(new InetSocketAddress(destinatario.getIp(), destinatario.getPuerto()), 1000); //1s de timeout
+		DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+		String mensaje = nickName + "`"+ ip + "`" + puerto +"`"+ texto;
 		out.writeUTF(mensaje);
-		System.out.println("mensaje enviado al servidor: " + mensaje);
+		clientSocket.close();
 		NuevoMensajeEnviado(destinatario, texto);
 	}
-	
-	@Override
-	public void Registrarse(String nickname) throws NicknameYaRegistradoException {
-        this.nickName = nickname;
-		try {
-            socket = new Socket(IP_SERVIDOR, PUERTO_SERVIDOR);
-            out = new DataOutputStream(socket.getOutputStream());
-            in = new DataInputStream(socket.getInputStream());
-            
-            // manda a registrarse al servidor
-            String mensaje = "REGISTRAR" + "`" + this.nickName;
-            out.writeUTF(mensaje);
-            String respuesta = in.readUTF(); // el servidor avisa si puedo registrarlo
-            if(respuesta.equalsIgnoreCase("REGISTRO_OK")) { //ok
-                new Thread(this::escucharMensajes).start();	// se pone a escuchar al servidor
-            }else {
-                System.out.println("nickname ya registrado");
-            	throw new NicknameYaRegistradoException(nickname);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-	}
-	
-	@Override
-	public void escucharMensajes() {
-		System.out.println(this.nickName + " esta en escucha");
-        try {
-            while (true) {
-                String mensaje = in.readUTF(); // emisor`mensaje
-                System.out.println("mensaje en escucharMensajes: " + mensaje);
-                String[] partes = mensaje.split("`");
-                NuevoMensajeRecibido(partes);
-            }
-        } catch (IOException e) {
-            System.out.println("Conexión cerrada.");
-        }
-    }
 	
 	public String getNickName() {
 		return nickName;
@@ -159,6 +193,17 @@ public class Usuario implements IFuncionalidadUsuario {
 	public ArrayList<Contacto> getContactos() {
 		return contactos;
 	}
+	
+	public ArrayList<Contacto> getConversaciones() {
+		//no existen conversaciones, son solo los contactos con mensajes
+		ArrayList<Contacto> contactosConConversaciones = new ArrayList<Contacto>();
+		for(Contacto c : contactos ) {
+			if(c.getMensajes().size() > 0) {
+				contactosConConversaciones.add(c);
+			}
+		}
+		return contactosConConversaciones;
+	}
 
 	public boolean NombreYaUsado(String nombre) {
 		for (Contacto c : contactos) {
@@ -168,48 +213,37 @@ public class Usuario implements IFuncionalidadUsuario {
         }
         return false;
 	}
-	
-	@Override
-	public boolean esContacto(String nickname) {
-        for (Contacto contacto : contactos) {
-            if (contacto.getNickName().equalsIgnoreCase(nickname)) {
-                return true;
+
+	public boolean EsContacto(String iP_Receptor, int puerto_Receptor) {
+		for (Contacto c : contactos) {
+            if (c.getIp().equals(iP_Receptor) && c.getPuerto() == puerto_Receptor) {
+                return true; // Se encontró el contacto con la misma IP y puerto
             }
         }
-        return false;
-    }
-	
-	public void agregarContacto(String nickname) {
-		if(!esContacto(nickname)) {
-			Contacto contacto = new Contacto(nickname);
-			this.contactos.add(contacto);
-			System.out.println("contacto " + nickname + " agregado");
-		}
+        return false; // No se encontró el contacto}
 	}
-	
-	public Contacto getContacto(String nickname) {
+	public Contacto getContacto(String ip, int puerto) {
         for (Contacto contacto : contactos) {
-            if (contacto.getNickName().equalsIgnoreCase(nickname)) {
+            if (contacto.getIp().equals(ip) && contacto.getPuerto() == puerto) {
                 return contacto; // Se encuentra el contacto y se retorna
             }
         }
         return null; // Si no se encuentra el contacto, retorna null
     }
 	
+
 	@Override
-	public void agendarContacto() throws VentanaCerradaSinSeleccionadosException,IOException {
-		int cant_contactos_pre = contactos.size();
-		String mensaje = "AGENDAR" + "`" + this.nickName;// aca le pide al servidor el directorio para agendar contactos
-		System.out.println("manda usuario: " + mensaje);
-		out.writeUTF(mensaje);
-		latchAgendamiento = new CountDownLatch(1);
-		try {
-			latchAgendamiento.await(); // espera a que le pasen todos los usuarios para agendar antes de seguir con la ejecucion
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+	public void conectar(String nombre, String ip, int puerto) throws IOException {
+		Iniciar(nombre, ip, puerto);
+	}
+
+	@Override
+	public void agendarContacto(Contacto nuevoContacto) {
+		if(!EsContacto(nuevoContacto.getIp(),nuevoContacto.getPuerto())) {
+			contactos.add(nuevoContacto);
+		}else { //actualizar nombre
+			this.getContacto(nuevoContacto.getIp(),nuevoContacto.getPuerto()).setNickName(nuevoContacto.getNickName());
 		}
-		if (cant_contactos_pre >= contactos.size()) // si no se agregaron contactos no actualiza las vistas
-			throw new VentanaCerradaSinSeleccionadosException();
 	}
 	
 }
