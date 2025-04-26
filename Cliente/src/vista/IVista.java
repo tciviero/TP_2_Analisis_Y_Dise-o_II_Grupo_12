@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import javax.swing.event.ListSelectionListener;
 
 import modelo.Contacto.Contacto;
+import modelo.usuario.UsuarioYEstado;
 
 public interface IVista extends INotificable{
 	void addActionListener(ActionListener var1);
@@ -24,5 +25,5 @@ public interface IVista extends INotificable{
 	void onFalloPuertoSinUso();
 	Contacto getConversacionSelected();
 	String getPuertoUsuarioText();
-	
+	public UsuarioYEstado getUsuarioSeleccionado();
 }

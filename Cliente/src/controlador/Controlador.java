@@ -23,6 +23,7 @@ import modelo.Contacto.Contacto;
 import modelo.Contacto.IVerConversacion;
 import modelo.usuario.IFuncionalidadUsuario;
 import modelo.usuario.Usuario;
+import modelo.usuario.UsuarioYEstado;
 import vista.VentanaChat;
 
 public class Controlador implements ActionListener, ListSelectionListener{
@@ -126,11 +127,11 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			e.printStackTrace();
 		}
 	}
-	
-	/*public void RegistroOInicioExitoso() {
-		vista.conectado();
-		
-	}*/
+	private void agendar() {
+		UsuarioYEstado usuario = vista.getUsuarioSeleccionado();
+		Usuario.getInstancia().agendarContacto(usuario.getNickname());
+		vista.ActualizaListaContactos();
+	}
 	
 	private void hablar() {
 		IVerConversacion contactoSeleccionado = vista.getContactoSeleccionado();
@@ -163,6 +164,9 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 		else if(comando.equalsIgnoreCase("INICIAR")) {
 			inicioSesion();
+		}
+		else if(comando.equalsIgnoreCase("AGENDAR")) {
+			agendar();
 		}
 		else if(comando.equalsIgnoreCase("HABLAR")) {
 			hablar();

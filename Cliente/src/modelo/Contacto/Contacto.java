@@ -6,14 +6,11 @@ import modelo.Mensaje;
 
 
 public class Contacto implements IFuncionalidadContacto {
-	private int puerto;
-	private String nickName, ip;
+	private String nickName;
 	private ArrayList<Mensaje> mensajes;
 	private int cantidadMensajesSinLeer;
 	
-	public Contacto(String nombre, String ip, int puerto){
-		this.puerto = puerto;
-		this.ip = ip;
+	public Contacto(String nombre){
 		this.nickName = nombre;
 		this.mensajes = new ArrayList<Mensaje>();
 	}
@@ -33,14 +30,6 @@ public class Contacto implements IFuncionalidadContacto {
 	
 	public void setNickName(String nuevo) {
 		this.nickName = nuevo;
-	}
-
-	public int getPuerto() {
-		return puerto;
-	}
-
-	public String getIp() {
-		return ip;
 	}
 	
 	@Override

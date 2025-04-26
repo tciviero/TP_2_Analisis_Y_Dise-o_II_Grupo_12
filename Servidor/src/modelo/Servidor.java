@@ -95,6 +95,7 @@ public class Servidor {
             			System.out.println("Solicitud ("+SOLICITUD+") desconocida");
             			break;
                 }
+				System.out.println("Sale de aca?");
                 //Cada vez que se recibe algun mensaje de lo que sea
                 //Se actualiza la vista del servidor
                 ControladorServidor.getInstance().ActualizarVistas();

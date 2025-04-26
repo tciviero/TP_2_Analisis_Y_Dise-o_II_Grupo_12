@@ -20,6 +20,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	private String nickName,ip;
 
 	private ArrayList<Contacto> contactos;
+	
 	private ArrayList<Contacto> conversaciones;
 	private ArrayList<UsuarioYEstado> directorio;
 	private ArrayList<INotificable> suscriptores;
@@ -156,11 +157,7 @@ public class Usuario implements IFuncionalidadUsuario {
 
 	private void EventoDirectorioRecibido() {
 		for (INotificable suscriptor: suscriptores) {
-			ArrayList<String> DirectorioFormateado = new ArrayList<String>();
-			for(UsuarioYEstado ue:this.directorio) {
-				DirectorioFormateado.add(ue.getNickname()+"    ["+ue.getEstado()+"]");
-			}
-			suscriptor.ActualizarDirectorio(DirectorioFormateado);
+			suscriptor.ActualizarDirectorio(this.directorio);
 		}
 	}
 
@@ -198,7 +195,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	@Override
 	public void NuevoMensajeRecibido(String[] arrayMensaje) {
-		String nombreMensaje = arrayMensaje[0];
+/*		String nombreMensaje = arrayMensaje[0];
 		if(!nombreMensaje.equalsIgnoreCase("ping123")) { //este nombre se usa para testear si esta conectado el usuario
 			String ipMensaje = arrayMensaje[1];
 			int puertoMensaje = Integer.parseInt(arrayMensaje[2]);
@@ -220,6 +217,7 @@ public class Usuario implements IFuncionalidadUsuario {
 			}
 			EventoNuevoMensajeRecibido();	
 		}
+		*/
 	}
 	
 	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
@@ -230,13 +228,14 @@ public class Usuario implements IFuncionalidadUsuario {
 
 	@Override
 	public void Envia(Contacto destinatario, String texto) throws IOException {
-		Socket clientSocket = new Socket();
+/*		Socket clientSocket = new Socket();
 		clientSocket.connect(new InetSocketAddress(destinatario.getIp(), destinatario.getPuerto()), 1000); //1s de timeout
 		DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 		String mensaje = nickName + "`"+ ip + "`" + puerto +"`"+ texto;
 		out.writeUTF(mensaje);
 		clientSocket.close();
 		NuevoMensajeEnviado(destinatario, texto);
+*/
 	}
 	
 	public String getNickName() {
@@ -274,23 +273,35 @@ public class Usuario implements IFuncionalidadUsuario {
         }
         return false;
 	}
-
-	public boolean EsContacto(String iP_Receptor, int puerto_Receptor) {
+	
+	@Override
+	public boolean EsContacto(String nickname) {
 		for (Contacto c : contactos) {
-            if (c.getIp().equals(iP_Receptor) && c.getPuerto() == puerto_Receptor) {
-                return true; // Se encontró el contacto con la misma IP y puerto
+            if (c.getNickName().equalsIgnoreCase(nickname)) {
+                return true; 
             }
         }
-        return false; // No se encontró el contacto}
+        return false; 
 	}
-	public Contacto getContacto(String ip, int puerto) {
+	public Contacto getContacto(String nickname) {
         for (Contacto contacto : contactos) {
-            if (contacto.getIp().equals(ip) && contacto.getPuerto() == puerto) {
-                return contacto; // Se encuentra el contacto y se retorna
+            if (contacto.getNickName().equalsIgnoreCase(nickname)) {
+                return contacto; 
             }
         }
-        return null; // Si no se encuentra el contacto, retorna null
+        return null; 
     }
+	public void agendarContacto(Contacto nuevoContacto) {
+		if(!EsContacto(nuevoContacto.getNickName())) {
+			contactos.add(nuevoContacto);
+		}
+	}
+
+	@Override
+	public void agendarContacto(String nickname) {
+		agendarContacto(new Contacto(nickname));
+	}
+
 	
 
 	@Override
@@ -298,13 +309,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		Iniciar(nombre, ip, puerto);
 	}
 
-	@Override
-	public void agendarContacto(Contacto nuevoContacto) {
-		if(!EsContacto(nuevoContacto.getIp(),nuevoContacto.getPuerto())) {
-			contactos.add(nuevoContacto);
-		}else { //actualizar nombre
-			this.getContacto(nuevoContacto.getIp(),nuevoContacto.getPuerto()).setNickName(nuevoContacto.getNickName());
-		}
-	}
+
+
+	
 	
 }

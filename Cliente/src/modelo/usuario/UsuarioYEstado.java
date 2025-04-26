@@ -25,6 +25,12 @@ public class UsuarioYEstado {
 			return "Offline";
 		}
 	}
+
+	@Override
+	public String toString() {
+		return nickname + "  [" + getEstado() + "]";
+	}
+	
 	
 
 }

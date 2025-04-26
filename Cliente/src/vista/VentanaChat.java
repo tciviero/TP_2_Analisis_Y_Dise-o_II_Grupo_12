@@ -6,8 +6,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionListener;
 
 import modelo.Contacto.Contacto;
-
+import modelo.Contacto.IVerConversacion;
 import modelo.usuario.Usuario;
+import modelo.usuario.UsuarioYEstado;
 
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -40,6 +41,7 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JButton btnRegistrar;
 	private JButton btnIniciarSesion;
 	private JButton btnEnviar;
+	private JButton btnAgendar;
 	
 	
 	private ArrayList<Contacto> listaConversaciones;
@@ -56,9 +58,9 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JTextField Teclado;
 	private Contacto contactoChatAbierto;
 
-	private ArrayList<String> Directorio;
+	private ArrayList<UsuarioYEstado> Directorio;
 	private DefaultListModel modeloDirectorio;
-	private JList<String> Lista_Directorio;
+	private JList<UsuarioYEstado> Lista_Directorio;
 
 
 	
@@ -291,16 +293,16 @@ public class VentanaChat extends JFrame implements IVista  {
 		lblDirectorio.setBounds(10, 10, 180, 30);
 		panel_Directorio.add(lblDirectorio);
 		
-		Directorio = new ArrayList<String>();
-		modeloDirectorio = new DefaultListModel<>();
-		Lista_Directorio = new JList<String>(modeloDirectorio);
+		Directorio = new ArrayList<UsuarioYEstado>();
+		modeloDirectorio = new DefaultListModel<UsuarioYEstado>();
+		Lista_Directorio = new JList<UsuarioYEstado>(modeloDirectorio);
 		Lista_Directorio.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		JScrollPane sc_1 = new JScrollPane(Lista_Directorio);
 		sc_1.setBounds(10, 65, 180, 565);
 		panel_Directorio.add(sc_1);
 		
-		JButton btnAgendar = new JButton("Agendar");
+		btnAgendar = new JButton("Agendar");
 		btnAgendar.setEnabled(true);
 		btnAgendar.setActionCommand("AGENDAR");
 		btnAgendar.setBounds(10, 40, 90, 20);
@@ -324,6 +326,8 @@ public class VentanaChat extends JFrame implements IVista  {
 		return Lista_Contactos.getSelectedValue();
 	}
 	
+	
+	
 	public String getTecladoText() {
 		return this.Teclado.getText();
 	}
@@ -346,14 +350,15 @@ public class VentanaChat extends JFrame implements IVista  {
 		}
 	}
 
+
+	
 	@Override
-	public void ActualizarDirectorio(ArrayList<String> directorio) {
-		this.modeloDirectorio.clear();
-		for(String s:directorio) {
-			modeloDirectorio.addElement(s);
+	public void ActualizaListaContactos() {
+		this.modelo.clear();
+		for(Contacto c:Usuario.getInstancia().getContactos()) {
+			modelo.addElement(c);
 		}
 	}
-
 
 
 	public void CargarChat(String mensajes) {
@@ -369,6 +374,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnRegistrar.addActionListener(var1);
 		btnEnviar.addActionListener(var1);
 		btnIniciarSesion.addActionListener(var1);
+		btnAgendar.addActionListener(var1);
 	}
 
 
@@ -440,10 +446,25 @@ public class VentanaChat extends JFrame implements IVista  {
 
 
 	@Override
-	public void ActualizaListaContactos() {
+	public void ActualizarDirectorio(ArrayList<UsuarioYEstado> directorio) {
 		// TODO Auto-generated method stub
-		
+		this.modeloDirectorio.clear();
+		for(UsuarioYEstado s:directorio) {
+			modeloDirectorio.addElement(s);
+		}
 	}
+
+
+	@Override
+	public UsuarioYEstado getUsuarioSeleccionado() {
+		return Lista_Directorio.getSelectedValue();
+	}
+
+
+
+	
+
+	
 
 
 	
