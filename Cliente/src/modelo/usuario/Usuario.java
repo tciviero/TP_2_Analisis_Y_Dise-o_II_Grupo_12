@@ -8,9 +8,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-
+import modelo.Conversacion;
+import modelo.IActualizarMensajes;
 import modelo.Contacto.Contacto;
-import modelo.Contacto.IActualizarMensajes;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
@@ -19,10 +19,10 @@ public class Usuario implements IFuncionalidadUsuario {
 	private int puerto;
 	private String nickName,ip;
 
-	private ArrayList<Contacto> contactos;
-	
-	private ArrayList<Contacto> conversaciones;
+	private ArrayList<Contacto> agenda;
+	private ArrayList<Conversacion> conversaciones;
 	private ArrayList<UsuarioYEstado> directorio;
+	
 	private ArrayList<INotificable> suscriptores;
 	
 	private boolean Conectado = false;
@@ -71,8 +71,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		this.puerto = puerto;
 		this.ip = ip;
 		this.nickName = Nombre;
-		this.contactos = new ArrayList<Contacto>();
-		this.conversaciones = new ArrayList<Contacto>();
+		this.agenda = new ArrayList<Contacto>();
+		this.conversaciones = new ArrayList<Conversacion>();
 		this.directorio = new ArrayList<UsuarioYEstado>();
 	}
 	
@@ -251,56 +251,21 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 
 	public ArrayList<Contacto> getContactos() {
-		return contactos;
+		return agenda;
 	}
 	
-	public ArrayList<Contacto> getConversaciones() {
-		//no existen conversaciones, son solo los contactos con mensajes
-		ArrayList<Contacto> contactosConConversaciones = new ArrayList<Contacto>();
-		for(Contacto c : contactos ) {
+	public ArrayList<Conversacion> getConversaciones() {
+		/*ArrayList<Conversacion> contactosConConversaciones = new ArrayList<Conversacion>();
+		for(Conversacion c : conversaciones ) {
 			if(c.getMensajes().size() > 0) {
 				contactosConConversaciones.add(c);
 			}
-		}
 		return contactosConConversaciones;
-	}
-
-	public boolean NombreYaUsado(String nombre) {
-		for (Contacto c : contactos) {
-            if (c.getNickName().equals(nombre)) {
-                return true; 
-            }
-        }
-        return false;
+		}*/
+		return conversaciones;
 	}
 	
-	@Override
-	public boolean EsContacto(String nickname) {
-		for (Contacto c : contactos) {
-            if (c.getNickName().equalsIgnoreCase(nickname)) {
-                return true; 
-            }
-        }
-        return false; 
-	}
-	public Contacto getContacto(String nickname) {
-        for (Contacto contacto : contactos) {
-            if (contacto.getNickName().equalsIgnoreCase(nickname)) {
-                return contacto; 
-            }
-        }
-        return null; 
-    }
-	public void agendarContacto(Contacto nuevoContacto) {
-		if(!EsContacto(nuevoContacto.getNickName())) {
-			contactos.add(nuevoContacto);
-		}
-	}
 
-	@Override
-	public void agendarContacto(String nickname) {
-		agendarContacto(new Contacto(nickname));
-	}
 
 	
 
@@ -308,6 +273,67 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void conectar(String nombre, String ip, int puerto) throws IOException {
 		Iniciar(nombre, ip, puerto);
 	}
+//--- Conversaciones
+	
+	public Conversacion getConversacion(String nickname) {
+		for (Conversacion c : conversaciones) {
+	        if (c.getNickName().equals(nickname)) {
+	            return c;
+	        }
+	    }
+		Conversacion nueva = new Conversacion(nickname);
+	    conversaciones.add(nueva);
+	    return nueva;
+	}
+	
+
+	public boolean ExisteConversacion(String nickname) {
+		for (Conversacion c : conversaciones) {
+	        if (c.getNickName().equals(nickname)) {
+	            return true;
+	        }
+	    }
+		return false;
+	}
+	
+//----AGENDA--------------------
+//----AGENDA-o-GestorDeContactos
+//----AGENDA--------------------
+	
+	@Override
+	public boolean EsContacto(String nickname) {
+		for (Contacto c : agenda) {
+			if (c.getNickName().equalsIgnoreCase(nickname)) {
+				return true; 
+			}
+		}
+		return false; 
+	}
+	
+	public Contacto getContacto(String nickname) {
+		for (Contacto contacto : agenda) {
+			if (contacto.getNickName().equalsIgnoreCase(nickname)) {
+				return contacto; 
+			}
+		}
+		return null; 
+	}
+	public void agendarContacto(Contacto usuario) {
+		//Agrega a la agenda alfabeticamente
+		if(!EsContacto(usuario.getNickName())) {
+			int i = 0;
+	        while (i < agenda.size() && 
+	               agenda.get(i).getNickName().compareToIgnoreCase(usuario.getNickName()) < 0) {
+	            i++;
+	        }
+	        agenda.add(i, usuario);
+		}
+	}
+	@Override
+	public void agendarContacto(String nickname) {
+		agendarContacto(new Contacto(nickname));
+	}
+
 
 
 
