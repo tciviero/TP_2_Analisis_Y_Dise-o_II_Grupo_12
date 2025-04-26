@@ -19,6 +19,8 @@ import java.util.Enumeration;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import excepciones.UsuarioConSesionActivaException;
+import excepciones.UsuarioNoRegistradoException;
 import modelo.Contacto.Contacto;
 import modelo.Contacto.IVerConversacion;
 import modelo.usuario.IFuncionalidadUsuario;
@@ -95,10 +97,10 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		
 		try {
-			if(!Usuario.getInstancia().isConectado()) {
+			//if(!Usuario.getInstancia().isConectado()) {
 				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
 				Usuario.getInstancia().Conectar();
-			}
+			//}
 			Usuario.getInstancia().enviarRequestRegistro();
 		} catch (SocketTimeoutException e) {
 			System.out.println("No fue posible conectarse con el servidor");
@@ -107,26 +109,37 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 	}
 
-	private void inicioSesion() {
+	private void comprobarInicioSesion() {
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		
 		try {
-			if(!Usuario.getInstancia().isConectado()) {
-				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
-				Usuario.getInstancia().Conectar();
-				System.out.println("Usuario conectado");
-			}
-			else {
-				System.out.println("Se rompe cuando se llama a enviarRequest??");
-				Usuario.getInstancia().enviarRequestInicioSesion();
-			}
-		} catch (SocketTimeoutException e) {
-			System.out.println("No fue posible conectarse con el servidor");
-		}catch (IOException e) {
+			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
+			//ahora toca iniciar sesion
+			Usuario.getInstancia().iniciarSesion(nombre);
+		} catch (UsuarioConSesionActivaException e) {
+			this.vista.onFalloUsuarioConSesionActiva(nombre);
+		} catch (UsuarioNoRegistradoException e) {
+			this.vista.onFalloUsuarioNoRegistrado(nombre);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
+	/*private void inicioSesion() {
+		String nombre = this.vista.getNickNameUsuarioText();
+		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
+		
+		Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+		Usuario.getInstancia().Conectar();
+		
+		this.Conectar(); //levanta el socket
+		mensajeRegistro = "INICIAR`" + nickname;
+		out.writeUTF(mensajeRegistro); //pide iniciar sesion
+	}*/
+	
 	private void agendar() {
 		UsuarioYEstado usuario = vista.getUsuarioSeleccionado();
 		Usuario.getInstancia().agendarContacto(usuario.getNickname());
@@ -163,7 +176,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			registrar();
 		}
 		else if(comando.equalsIgnoreCase("INICIAR")) {
-			inicioSesion();
+			comprobarInicioSesion();
 		}
 		else if(comando.equalsIgnoreCase("AGENDAR")) {
 			agendar();

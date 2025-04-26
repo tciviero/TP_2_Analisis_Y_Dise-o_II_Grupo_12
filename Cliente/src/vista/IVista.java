@@ -23,6 +23,8 @@ public interface IVista extends INotificable{
 	void onFalloPuertoYaEnUso();
 	void onFalloPuertoFueraRango();
 	void onFalloPuertoSinUso();
+	void onFalloUsuarioConSesionActiva(String nickname);
+	void onFalloUsuarioNoRegistrado(String nickname);
 	Contacto getConversacionSelected();
 	String getPuertoUsuarioText();
 	public UsuarioYEstado getUsuarioSeleccionado();

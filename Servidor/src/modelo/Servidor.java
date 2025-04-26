@@ -21,8 +21,8 @@ public class Servidor {
 	private static final int PUERTO_SERVIDOR = 1234;
 	private ServerSocket serverSocket;
 	
-	private static HashMap<String,Socket> SocketsDeUsuarios ;
-
+	private static HashMap<String,Socket> SocketsDeUsuarios;
+	
 	private Servidor() {
 	}
 	
@@ -73,9 +73,13 @@ public class Servidor {
                     	nombreUsuario = dataArray[1];
             			registrar(nombreUsuario,socket);
                         break;
+                    case "COMPROBAR":
+                    	nombreUsuario = dataArray[1];
+                    	comprobarUsuarioSesion(nombreUsuario,socket);
+            			break;
                     case "INICIAR":
                     	nombreUsuario = dataArray[1];
-            			iniciarSesion(nombreUsuario,socket);
+                    	iniciarSesion(nombreUsuario,socket);
             			break;
                     case "MENSAJE":
                     	nombreUsuario = dataArray[1];
@@ -101,8 +105,8 @@ public class Servidor {
                 ControladorServidor.getInstance().ActualizarVistas();
             }
 
-        } catch (IOException e) {
-            String nombre=Servidor.getNickname(socket);
+        } catch (IOException e) { //se desconecta el usuario
+            String nombre = Servidor.getNickname(socket);
         	System.out.println("Cliente desconectado:"+nombre);
         	
             //Antes de avisar a todos que se desconecto, es necesario
@@ -110,7 +114,7 @@ public class Servidor {
         	//Sale "Error al enviar al socket"
         	if(nombre!=null) {
         		SocketsDeUsuarios.remove(nombre);
-        		Directorio.getInstance().NotificarDesconeccion(nombre);
+        		Directorio.getInstance().NotificarDesconexion(nombre);
         	}
             
             
@@ -170,20 +174,30 @@ public class Servidor {
 		    }
 		}
 	}
-
+	
 	private void iniciarSesion(String nickname, Socket socket) throws IOException {
+		String mensaje_enviar = "RES-INICIO`OK`Inicio exitoso";
+		SocketsDeUsuarios.put(nickname, socket);
+		Directorio.getInstance().NotificarConexion(nickname);
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		String mensaje_enviar = "RES-INICIO"+ "`";
-		if(Directorio.getInstance().contieneUsuario(nickname)) {
-			if (SocketsDeUsuarios.containsKey(nickname)) {
-				SocketsDeUsuarios.remove(nickname);
+		out.writeUTF(mensaje_enviar);
+		System.out.println("se inicia sesion" + nickname);
+	}
+
+	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {
+		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		String mensaje_enviar;
+		if(Directorio.getInstance().contieneUsuario(nickname)) { //si primero se registro ok, si no error de que el nickname no se registro
+			if(Directorio.getInstance().usuarioEstaConectado(nickname)) { //si esta conectado error ! no puede iniciar sesion 
+				mensaje_enviar = "YA_INICIADO";
+			}else { //inicio sesion
+				System.out.println("ESTA TODO OK EN COMPROBAR USUARIO");
+				SocketsDeUsuarios.put(nickname, socket);
+				Directorio.getInstance().NotificarConexion(nickname);
+				mensaje_enviar = "INICIO_OK";
 			}
-			SocketsDeUsuarios.put(nickname, socket);
-			Directorio.getInstance().NotificarConeccion(nickname);
-			mensaje_enviar +=  "OK"+"`"+"Inicio exitoso";
-		}
-		else {
-			mensaje_enviar += "Error"+ "`" +"El usuario no existe";
+		}else {
+			mensaje_enviar = "NO_REGISTRADO";
 		}
 		out.writeUTF(mensaje_enviar);
 	}

@@ -1,12 +1,16 @@
 package modelo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import controlador.ControladorServidor;
 
 
 public class Directorio {
-	private ArrayList<Usuario> usuarios ;
+	//private ArrayList<Usuario> usuarios ;
+	private HashMap<String,Boolean> estadoUsuarios; //nickname y true (conectado) / false (desconectado)
+	
 	//Cambie el directorio de hashmap a array porque necesito
 	//Que esten ordenados alfabeticamente
 
@@ -15,8 +19,13 @@ public class Directorio {
 	private static Directorio instance =null;
 	
 	private Directorio() {
-		usuarios = new ArrayList<Usuario>();
+		//usuarios = new ArrayList<Usuario>();
+		this.estadoUsuarios = new HashMap<String,Boolean>();
 		//ventana = new VentanaDirectorio();
+	}
+	
+	public boolean usuarioEstaConectado(String nickname) { //devuelve si esta conectado el usuario
+		return this.estadoUsuarios.get(nickname);
 	}
 	
 	public static Directorio getInstance() {
@@ -27,34 +36,35 @@ public class Directorio {
 	}
 	
 	public boolean contieneUsuario(String nickname) {
-		for (Usuario u : usuarios) {
+		/*for (Usuario u : usuarios) {
 	        if (u.getNickname().equalsIgnoreCase(nickname)) {
 	            return true;
 	        }
-	    }
-	    return false;
+	    }*/
+	    return this.estadoUsuarios.containsKey(nickname);
 	}
 	
 	public void agregarUsuario(Usuario nuevo) {
 		String nicknameNuevo = nuevo.getNickname();
 	    int i = 0;
 
-	    while (i < usuarios.size() && 
+	    /*while (i < usuarios.size() && 
 	           usuarios.get(i).getNickname().compareToIgnoreCase(nicknameNuevo) < 0) {
 	        i++;
 	    }
-	    this.usuarios.add(i, nuevo); // lo inserta en la posición correcta
+	    this.usuarios.add(i, nuevo); // lo inserta en la posición correcta*/
+	    this.estadoUsuarios.put(nuevo.getNickname(),true); //lo agrego como conectado
 	}
 
 	
-	public Usuario devuelveUsuario(String nickname) {
+	/*public Usuario devuelveUsuario(String nickname) {
 		for (Usuario u : usuarios) {
 	        if (u.getNickname().equals(nickname)) {
 	            return u;
 	        }
 	    }
 	return null; 
-	}
+	}*/
 	
 	/*public void mostrarDirectorio(String usuarioSolicitante,Socket socket_solicitante) {
 		String[] usuarios_registrados = usuarios.keySet().toArray(new String[0]);
@@ -91,10 +101,21 @@ public class Directorio {
 	}*/
 
 	public ArrayList<String> getUsuarios() {
+		//ArrayList<String> DirectorioParaVista = new ArrayList<String>();
 		ArrayList<String> DirectorioParaVista = new ArrayList<String>();
-	    for (Usuario u :usuarios) {
+		String mensaje;
+	    /*for (Usuario u : this.estadoUsuarios) {
 	    	DirectorioParaVista.add(u.getNickname()+"    ["+u.getEstado()+"]");
-	    }
+	    }*/
+		for (Entry<String, Boolean> entry : this.estadoUsuarios.entrySet()) {
+		    mensaje = entry.getKey();
+		    boolean conectado = entry.getValue();
+		    if(entry.getValue())
+		    	mensaje = mensaje + "[online]";
+		    else
+		    	mensaje = mensaje + "[offline]";
+		    DirectorioParaVista.add(mensaje);
+		}
 	    return DirectorioParaVista;
 	}
 	
@@ -102,7 +123,7 @@ public class Directorio {
 	//Este getDirectorioFormateado es para enviar
 	//A traves del Gestor de Conexiones
 	public String getDirectorioFormateado() {
-	    StringBuilder sb = new StringBuilder();
+	    /*StringBuilder sb = new StringBuilder();
 	    sb.append("DIRECTORIO`");
 	    sb.append(usuarios.size());
 
@@ -114,22 +135,33 @@ public class Directorio {
 	    	else {
 		    	sb.append("`").append("Offline");   		
 	    	}
-	    }
+	    }*/
+	    String directorioFormateado = "DIRECTORIO`" + this.estadoUsuarios.size();
+	    for (Entry<String, Boolean> entry : this.estadoUsuarios.entrySet()) {
+	    	directorioFormateado = directorioFormateado + "`" + entry.getKey();
+		    boolean conectado = entry.getValue();
+		    if(entry.getValue())
+		    	directorioFormateado = directorioFormateado + "`online";
+		    else
+		    	directorioFormateado = directorioFormateado + "`offline";
+		}
 
-	    return sb.toString();
+	    return directorioFormateado;
 	}
 
-	public void NotificarDesconeccion(String nombre) {
-		Usuario u = devuelveUsuario(nombre);
-		u.setConectado(false);
+	public void NotificarDesconexion(String nickname) {
+		/*Usuario u = devuelveUsuario(nickname);
+		u.setConectado(false);*/
+		this.estadoUsuarios.put(nickname, false);
 		
 		Servidor.getInstancia().ActualizaDirectoriosClientes();
 		ControladorServidor.getInstance().ActualizarVistas();
 	}
 
-	public void NotificarConeccion(String nickname) {
-		Usuario u = devuelveUsuario(nickname);
-		u.setConectado(true);
+	public void NotificarConexion(String nickname) {
+		/*Usuario u = devuelveUsuario(nickname);
+		u.setConectado(true);*/
+		this.estadoUsuarios.put(nickname, true);
 		
 		Servidor.getInstancia().ActualizaDirectoriosClientes();
 		ControladorServidor.getInstance().ActualizarVistas();
