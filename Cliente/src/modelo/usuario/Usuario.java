@@ -18,12 +18,13 @@ public class Usuario implements IFuncionalidadUsuario {
 	private String nickName,ip;
 	private ArrayList<Contacto> contactos;
 	private ArrayList<Contacto> conversaciones;
+	private ArrayList<String> directorio;
 	private static Usuario instancia = null;
 	private ServerSocket serverSocket;
 	private ArrayList<INotificable> suscriptores;
 	private boolean ejecutando = false;
-	private final int PUERTO_SERVIDOR = 10;
-	private Socket socket;
+	private final int PUERTO_SERVIDOR = 1234;
+	private Socket socket;	//con el socket se comunica con el servidor
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
@@ -57,15 +58,91 @@ public class Usuario implements IFuncionalidadUsuario {
 		this.nickName = Nombre;
 		this.contactos = new ArrayList<Contacto>();
 		this.conversaciones = new ArrayList<Contacto>();
-		Conectar();
-		enviarRequestRegistro();
+		this.directorio = new ArrayList<String>();
+		Conectar();	// Esto es para conectar con el servidor
+		//Se queda esperando la respuesta del servidor en un hilo
+		enviarRequestRegistro(); //Envia solicitud de registro al server
 	}
 	
+	public void Conectar() throws IOException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
+		new Thread(() -> {
+			EscucharMensajesServidor(socket);
+		}).start();
+	}
+	
+	private void EscucharMensajesServidor(Socket socket){
+		try {
+			System.out.println("Dentro de un hilo conectado al servidor... esperando");
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			while(true) {
+				String data = in.readUTF();
+				System.out.println("El servidor nos envio este mensaje: "+data);
+				String[] dataArray = data.split("`");
+				
+				String respuesta = dataArray[0].toUpperCase();
+				
+				switch(respuesta) {
+				case "RES-REGISTRO":
+					if(dataArray[1] == "OK") {
+						//registro exitoso
+						System.out.println("Usuario registrado exitosamente");
+					}
+					else {
+						System.out.println("Se recibio un error:"+dataArray[2]);
+						//error registro
+					}
+				    break;
+				case "Res-inicio":
+					if(dataArray[1] == "OK") {
+						//inicio exitoso
+					}
+					else {
+						//error inicio
+					}
+					break;
+				case "Res-envio":
+					if(dataArray[1] == "OK") {
+						//envio exitoso
+					}
+					else {
+						//error envio
+					}
+					break;
+				case "DIRECTORIO":
+					//Llega la lista de contactos, que son solo strings con los nicknames
+					int cantidadContactos = Integer.parseInt(dataArray[1]);
+					this.directorio.clear();
+					for (int i = 2; i < dataArray.length; i++) {
+						this.directorio.add(dataArray[i]);
+					}
+					EventoDirectorioRecibido();
+					break;
+				default:
+					System.out.println("Respuesta ("+respuesta+") desconocida");
+					break;
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	
+	private void EventoDirectorioRecibido() {
+		for (INotificable suscriptor: suscriptores) {
+			suscriptor.ActualizarDirectorio(this.directorio);
+		}
+	}
+
 	private void enviarRequestRegistro() throws IOException {
 		if(!socket.isClosed()) {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "Registrar" + "`" + nickName;
 			out.writeUTF(mensajeRegistro);
+			System.out.println("Se envia al servidor:"+mensajeRegistro);
 		}
 	}
 	
@@ -116,56 +193,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		destinatario.addMensaje(nickName,texto, true);
 	}
 	
-	public void Conectar() throws IOException {
-		socket = new Socket();
-		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
-		new Thread(() -> {
-			EscucharMensajesServidor(socket);
-		}).start();
-	}
 	
-	private void EscucharMensajesServidor(Socket socket){
-		 try {
-			DataInputStream in = new DataInputStream(socket.getInputStream());
-			
-			while(true) {
-				String data = in.readUTF();
-				String[] dataArray = data.split("`");
-				
-				String respuesta = dataArray[0];
-				
-				switch(respuesta) {
-					case "Res-registro":
-						if(dataArray[1] == "OK") {
-							//registro exitoso
-						}
-						else {
-							//error registro
-						}
-					case "Res-inicio":
-						if(dataArray[1] == "OK") {
-							//inicio exitoso
-						}
-						else {
-							//error inicio
-						}
-					case "Res-envio":
-						if(dataArray[1] == "OK") {
-							//envio exitoso
-						}
-						else {
-							//error envio
-						}
-					case "Directorio":
-						//Llega la lista de contactos, que son solo strings con los nicknames
-						int cantidadContactos = Integer.parseInt(dataArray[1]);
-				}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	@Override
 	public void Envia(Contacto destinatario, String texto) throws IOException {

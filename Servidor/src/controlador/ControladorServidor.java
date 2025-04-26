@@ -6,17 +6,26 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import modelo.Directorio;
 import modelo.Servidor;
 import vista.VentanaServidor;
 
 
 public class ControladorServidor{
 
+	private static ControladorServidor instance=null;
 	private VentanaServidor vista;
 	private String IP_Servidor = "192.168.1.45";
 	private int Puerto_Servidor = 1234;
 	
-	public ControladorServidor() {
+	private ControladorServidor() {
+	}
+	
+	public static ControladorServidor getInstance() {
+		if(instance==null) {
+			instance = new ControladorServidor();
+		}
+		return instance;
 	}
 	
 	public VentanaServidor getVista() {
@@ -24,11 +33,17 @@ public class ControladorServidor{
 	}
 	
 	public void Iniciar() {
-		//IP_Servidor = crearIP();
+		IP_Servidor = crearIP();
 		Puerto_Servidor = 1234;
 		vista = new VentanaServidor(IP_Servidor,Puerto_Servidor);
 		Servidor.getInstancia().Iniciar();
-		
+		System.out.println("Esto no se ejecuta");
+	}
+	
+	public void ActualizarVistas() {
+		String[] usuarios=null;
+		usuarios = Directorio.getInstance().getUsuarios();
+		this.vista.ActualizarDirectorio(usuarios);
 	}
 	
 	public String crearIP() {

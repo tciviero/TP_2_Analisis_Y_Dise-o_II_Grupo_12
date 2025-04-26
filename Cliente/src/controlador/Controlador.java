@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -34,6 +35,15 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		
 	}
 
+	public void Iniciar() {
+		IP_Usuario = crearIP();
+		vista = new VentanaChat(IP_Usuario);
+		vista.addActionListener(this);
+		vista.addListSelectionListener(this);
+		Usuario.getInstancia().AgregarSuscriptor(vista);
+	}
+	
+	
 	public IVista getVista(){
 		return this.vista;
 	}
@@ -78,18 +88,22 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		return null;
 	}
 	
-	public void Iniciar() {
-		IP_Usuario = crearIP();
-		vista = new VentanaChat(IP_Usuario);
-		vista.addActionListener(this);
-		vista.addListSelectionListener(this);
-		Usuario.getInstancia().AgregarSuscriptor(vista);
-	}
 
 	private void registrar() {
 		vista.conectado();
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
+		
+		try {
+			//Inicio al usuario que automaticamente se queda escuchando
+			//En su puerto, 
+			Usuario.getInstancia().Iniciar(nombre, this.IP_Usuario, puerto);
+		} catch (SocketTimeoutException e) {
+			System.out.println("No fue posible conectarse con el servidor");
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
 		//intento conectarme al servidor, si ok, recibo lista de contactos
 		//try {
 			//usuario.conectar(nombre, crearIP(), puerto);

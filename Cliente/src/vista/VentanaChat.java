@@ -16,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JFormattedTextField;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -54,6 +55,10 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JTextArea Chat;
 	private JTextField Teclado;
 	private Contacto contactoChatAbierto;
+
+	private ArrayList<String> Directorio;
+	private DefaultListModel modeloDirectorio;
+	private JList<String> Lista_Directorio;
 
 
 	
@@ -130,7 +135,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		JPanel panel_Contactos = new JPanel();
 		panel_Contactos.setLayout(null);
 		panel_Contactos.setBackground(new Color(128, 128, 255));
-		panel_Contactos.setBounds(10, 10, 320, 640);
+		panel_Contactos.setBounds(220, 10, 200, 640);
 		//contentPane.add(panel_Contactos);
 		chatPane.add(panel_Contactos);
 		
@@ -162,7 +167,7 @@ public class VentanaChat extends JFrame implements IVista  {
 			}
 		});
 		JScrollPane sc = new JScrollPane(Lista_Contactos);
-		sc.setBounds(10, 65, 300, 565);
+		sc.setBounds(10, 65, 180, 565);
 		panel_Contactos.add(sc);
 		
 		btnIniciarConversacion = new JButton("Hablar");
@@ -175,7 +180,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		JPanel panel_Conversaciones = new JPanel();
 		panel_Conversaciones.setLayout(null);
 		panel_Conversaciones.setBackground(new Color(128, 128, 255));
-		panel_Conversaciones.setBounds(330, 10, 320, 640);
+		panel_Conversaciones.setBounds(430, 10, 200, 640);
 		chatPane.add(panel_Conversaciones);
 		
 		JLabel lblConversaciones = new JLabel("Conversaciones");
@@ -191,7 +196,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		Lista_Conversacion.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		JScrollPane scrollConversaciones = new JScrollPane(Lista_Conversacion);
-		scrollConversaciones.setBounds(10, 65, 300, 565);
+		scrollConversaciones.setBounds(10, 65, 180, 565);
 		panel_Conversaciones.add(scrollConversaciones);
 		
 		
@@ -199,18 +204,18 @@ public class VentanaChat extends JFrame implements IVista  {
 		panel_Chat = new JPanel();
 		panel_Chat.setLayout(null);
 		panel_Chat.setBackground(new Color(128, 128, 255));
-		panel_Chat.setBounds(665, 10, 810, 640);
+		panel_Chat.setBounds(640, 10, 420, 640);
 		//contentPane.add(panel_Chat);
 		chatPane.add(panel_Chat);
 		
 		
 		JLabel lblTituloChat = new JLabel("Chat con {NICKNAME_DE_CONTACTO_CON_LA_CONVER_CLICKEADA}");
-		lblTituloChat.setBounds(10, 0, 1000, 100);
+		lblTituloChat.setBounds(10, 0, 400, 100);
 		lblTituloChat.setFont(new Font("Arial", Font.BOLD, 20));
 		panel_Chat.add(lblTituloChat);
 
 		Teclado = new JFormattedTextField();
-		Teclado.setBounds(10, 600, 700, 25);
+		Teclado.setBounds(10, 600, 320, 25);
 		panel_Chat.add(Teclado);
 		String DefaultText="Escribe aqui un mensaje";
 		Teclado.setText(DefaultText);
@@ -247,15 +252,42 @@ public class VentanaChat extends JFrame implements IVista  {
         
 
 		JScrollPane scrollPane_1 = new JScrollPane(Chat);
-		scrollPane_1.setBounds(10, 65, 790, 520);
+		scrollPane_1.setBounds(10, 65, 400, 520);
 		panel_Chat.add(scrollPane_1);
 		
 		btnEnviar = new JButton("Enviar");
 		btnEnviar.setActionCommand("ENVIAR");
-		btnEnviar.setBounds(720, 601, 70, 23);
+		btnEnviar.setBounds(340, 601, 70, 23);
 		btnEnviar.setEnabled(false);
 		panel_Chat.add(btnEnviar);
 		
+//Panel Directorio
+		JPanel panel_Directorio = new JPanel();
+		panel_Directorio.setLayout(null);
+		panel_Directorio.setBackground(new Color(128, 128, 255));
+		panel_Directorio.setBounds(10, 10, 200, 640);
+		chatPane.add(panel_Directorio);
+		
+		JLabel lblDirectorio = new JLabel("Directorio");
+		lblDirectorio.setFont(new Font("Arial", Font.BOLD, 20));
+		lblDirectorio.setBounds(10, 10, 180, 30);
+		panel_Directorio.add(lblDirectorio);
+		
+		Directorio = new ArrayList<String>();
+		modeloDirectorio = new DefaultListModel<>();
+		Lista_Directorio = new JList<String>(modeloDirectorio);
+		Lista_Directorio.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		JScrollPane sc_1 = new JScrollPane(Lista_Directorio);
+		sc_1.setBounds(10, 65, 180, 565);
+		panel_Directorio.add(sc_1);
+		
+		JButton btnAgendar = new JButton("Agendar");
+		btnAgendar.setEnabled(true);
+		btnAgendar.setActionCommand("AGENDAR");
+		btnAgendar.setBounds(10, 40, 90, 20);
+		panel_Directorio.add(btnAgendar);
+
 		this.setVisible(true);
 	}
 
@@ -283,7 +315,7 @@ public class VentanaChat extends JFrame implements IVista  {
 	
 	public void conectado() {
 		setContentPane(chatPane);
-		setBounds(100, 100, 1500, 700);
+		setBounds(10, 10, 1080, 680);
 		revalidate();
 	}
 	
@@ -296,6 +328,13 @@ public class VentanaChat extends JFrame implements IVista  {
 		}
 	}
 
+	@Override
+	public void ActualizarDirectorio(ArrayList<String> directorio) {
+		this.modeloDirectorio.clear();
+		for(String s:directorio) {
+			modeloDirectorio.addElement(s);
+		}
+	}
 
 
 
@@ -381,6 +420,9 @@ public class VentanaChat extends JFrame implements IVista  {
 		// TODO Auto-generated method stub
 		
 	}
+
+
+	
 
 
 

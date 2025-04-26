@@ -1,5 +1,6 @@
-/modelo/
-/vista/
 /controlador/
-/main/
 /excepciones/
+/main/
+/modelo/
+/module-info.class
+/vista/

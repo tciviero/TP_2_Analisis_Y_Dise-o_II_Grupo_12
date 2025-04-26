@@ -14,15 +14,16 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
 import modelo.Usuario;
+import modelo.Contacto.Contacto;
 
 
 public class VentanaServidor extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private ArrayList<Usuario> listaUsuarios;//del panel de directorio
-	private DefaultListModel<Usuario> modelo;
-	private JList<Usuario>ListaUsuarios;
+	private ArrayList<String> listaUsuarios;//del panel de directorio
+	private DefaultListModel<String> modelo;
+	private JList<String> ListaUsuarios;
 
 	
 	public VentanaServidor(String Ip_Servidor, int Puerto_Servidor) {
@@ -60,17 +61,18 @@ public class VentanaServidor extends JFrame {
 		lblUsuarios.setBounds(10, 10, 280, 24);
 		panel_Directorio.add(lblUsuarios);
 		
-		listaUsuarios= new ArrayList<Usuario>();
+		listaUsuarios= new ArrayList<String>();
 		modelo = new DefaultListModel<>();
-        for (Usuario c : listaUsuarios) {
+        for (String c : listaUsuarios) {
             modelo.addElement(c);
         }
-        ListaUsuarios = new JList<Usuario>(modelo);
+        ListaUsuarios = new JList<String>(modelo);
         ListaUsuarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		ListaUsuarios.addListSelectionListener(e->{
 			if(!e.getValueIsAdjusting()) { 
 				//Aca se solto el click cuando se selecciona un elemento
-				Usuario u = ListaUsuarios.getSelectedValue();
+				String u =null;
+				u = ListaUsuarios.getSelectedValue();
 				if(u!=null) {
 					//System.out.println("Se selecciono a "+c);
 					//btnHablar.setEnabled(true);
@@ -89,5 +91,15 @@ public class VentanaServidor extends JFrame {
 		panel_Directorio.add(sc);
 		
 	}
+
+
+	public void ActualizarDirectorio(String[] usuarios) {
+		this.modelo.clear();
+		for (String c: usuarios) {
+			modelo.addElement(c);
+		}
+	}
+	
+	
 
 }

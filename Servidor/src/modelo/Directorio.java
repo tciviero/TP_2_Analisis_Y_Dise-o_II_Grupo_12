@@ -13,8 +13,22 @@ import java.util.Map;
 import vista.VentanaDirectorio;
 
 public class Directorio {
-	private HashMap<String,Socket> usuarios = new HashMap<String,Socket>();
-	private VentanaDirectorio ventana = new VentanaDirectorio();
+	private HashMap<String,Socket> usuarios ;
+	private VentanaDirectorio ventana ;
+	
+	private static Directorio instance =null;
+	
+	private Directorio() {
+		usuarios = new HashMap<String,Socket>();
+		ventana = new VentanaDirectorio();
+	}
+	
+	public static Directorio getInstance() {
+		if(instance==null) {
+			instance = new Directorio();
+		}
+		return instance;
+	}
 	
 	public boolean contieneUsuario(String nickname) {
 		return this.usuarios.containsKey(nickname);
@@ -22,6 +36,8 @@ public class Directorio {
 	
 	public void agregarUsuario(String nickname, Socket socket) {
 		this.usuarios.put(nickname, socket);
+		//Actualizar vista
+		
 	}
 	
 	public Socket devuelveSocketUsuario(String nickname) {
@@ -61,5 +77,20 @@ public class Directorio {
 			}
         });
 	}
+
+	public String[] getUsuarios() {
+		return usuarios.keySet().toArray(new String[0]);
+	}
 	
+	public String getDirectorioFormateado() {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("DIRECTORIO`");
+	    sb.append(usuarios.size());
+
+	    for (String nombre : usuarios.keySet()) {
+	        sb.append("`").append(nombre);
+	    }
+
+	    return sb.toString();
+	}
 }
