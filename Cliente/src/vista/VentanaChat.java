@@ -458,7 +458,8 @@ public class VentanaChat extends JFrame implements IVista  {
 		this.Chat.setText(c.mostrarMensajes());
 		this.panel_Chat.setVisible(true);
 		this.lblTituloChat.setText("Chat de "+c.getNickName());
-	
+		c.SetCantidadMensajesSinLeer(0);
+		ActualizarListaConversaciones();
 	}
 
 //--------NOTIFICACIONES-----------------

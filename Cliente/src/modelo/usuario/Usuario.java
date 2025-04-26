@@ -127,6 +127,11 @@ public class Usuario implements IFuncionalidadUsuario {
 						//error envio
 					}
 					break;
+				case "RECIBIR":
+					String nicknameEmisor=dataArray[1];
+					String mensaje=dataArray[2];
+					NuevoMensajeRecibido(nicknameEmisor,mensaje);
+					break;
 				case "DIRECTORIO":
 					//Llega la lista de contactos, que son solo strings con los nicknames
 					int cantidadContactos = Integer.parseInt(dataArray[1]);
@@ -184,18 +189,30 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 	
-	private void enviarRequestMensaje(String mensaje, String destinatario) throws IOException {
-		if(!socket.isClosed()) {
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
-			out.writeUTF(mensajeRegistro);
+	public void enviarRequestMensaje(String mensaje, String destinatario) {
+		try {
+			if(!socket.isClosed()) {
+				DataOutputStream out;
+				out = new DataOutputStream(socket.getOutputStream());
+				String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
+				out.writeUTF(mensajeRegistro);
+			}
+		} catch (IOException e) {
+			
+			e.printStackTrace();
 		}
 	}
 	
-	
 	@Override
-	public void NuevoMensajeRecibido(String[] arrayMensaje) {
-/*		String nombreMensaje = arrayMensaje[0];
+	public void NuevoMensajeRecibido(String Emisor, String texto) {
+		System.out.println("AAAAA: recibimos mensaje:"+texto);
+		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
+		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
+		EventoNuevoMensajeRecibido();
+		
+	}
+/*	public void NuevoMensajeRecibido(String[] arrayMensaje) {
+		String nombreMensaje = arrayMensaje[0];
 		if(!nombreMensaje.equalsIgnoreCase("ping123")) { //este nombre se usa para testear si esta conectado el usuario
 			String ipMensaje = arrayMensaje[1];
 			int puertoMensaje = Integer.parseInt(arrayMensaje[2]);
@@ -217,8 +234,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			}
 			EventoNuevoMensajeRecibido();	
 		}
-		*/
+		
 	}
+	*/
 	
 	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
 		destinatario.addMensaje(nickName,texto, true);
@@ -226,17 +244,17 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	
 
-	@Override
-	public void Envia(Contacto destinatario, String texto) throws IOException {
-/*		Socket clientSocket = new Socket();
+	/*@Override
+	public void Envia(Conversacion destinatario, String texto) throws IOException {
+		Socket clientSocket = new Socket();
 		clientSocket.connect(new InetSocketAddress(destinatario.getIp(), destinatario.getPuerto()), 1000); //1s de timeout
 		DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 		String mensaje = nickName + "`"+ ip + "`" + puerto +"`"+ texto;
 		out.writeUTF(mensaje);
 		clientSocket.close();
 		NuevoMensajeEnviado(destinatario, texto);
-*/
-	}
+
+	}*/
 	
 	public String getNickName() {
 		return nickName;
@@ -333,6 +351,8 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void agendarContacto(String nickname) {
 		agendarContacto(new Contacto(nickname));
 	}
+
+	
 
 
 

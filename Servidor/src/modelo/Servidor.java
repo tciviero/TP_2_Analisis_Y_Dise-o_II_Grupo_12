@@ -77,7 +77,7 @@ public class Servidor {
                     	nombreUsuario = dataArray[1];
             			iniciarSesion(nombreUsuario,socket);
             			break;
-                    case "MENSAJE":
+                    case "ENVIAR":
                     	nombreUsuario = dataArray[1];
             			String Mensaje = dataArray[2];
             			String NicknameReceptor = dataArray[3];
@@ -126,10 +126,11 @@ public class Servidor {
 	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
 		//Socket socket_receptor = Directorio.getInstance().devuelveSocketUsuario(nick_receptor);
-		Socket socket_receptor = this.SocketsDeUsuarios.get(nick_receptor);
+		Socket socket_receptor = getSocket(nick_receptor);
+		
 		if(!socket_receptor.isClosed()) {
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
-			String mensaje_enviar = "MENSAJE" + "`" + nick_emisor + "`" + mensaje;
+			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje;
 			System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje_enviar);
 			out.flush();
 			out.writeUTF(mensaje_enviar);
@@ -195,10 +196,18 @@ public class Servidor {
 	public static String getNickname(Socket socket) {
 	    for (Map.Entry<String, Socket> entry : SocketsDeUsuarios.entrySet()) {
 	        if (entry.getValue().equals(socket)) {
-	            return entry.getKey(); // Este es el nickname
+	            return entry.getKey(); 
 	        }
 	    }
-	    return null; // si no se encuentra
+	    return null; 
+	}
+	public static Socket getSocket(String nickname) {
+		for (Map.Entry<String, Socket> entry : SocketsDeUsuarios.entrySet()) {
+	        if (entry.getKey().equals(nickname)) {
+	            return entry.getValue(); 
+	        }
+	    }
+	    return null;
 	}
 
 }

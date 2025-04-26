@@ -148,24 +148,20 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		Conversacion aAbrir = Usuario.getInstancia().getConversacion(seleccionado.getNickName());
 		vista.CargarChat(aAbrir);
 		vista.ActualizarListaConversaciones();
-		
-		
-		System.out.println("Dentro de hablar()");
 	}
-	
-	private void enviar() {/*
+
+	private void enviar() {
 		String msg = vista.getTecladoText();
 		if(!msg.equalsIgnoreCase("")) {
-			try {
-				this.usuario.Envia(vista.getConversacionAbierta(), msg);
-			} catch (IOException e) {
-				vista.OnFalloEnvioMensaje();
+			Conversacion actual= vista.getConversacionAbierta();
+			if(actual!=null) {
+				Usuario.getInstancia().enviarRequestMensaje(msg, actual.getNickName());
+				actual.addMensaje(Usuario.getInstancia().getNickName(), msg, true);
+				actual.SetCantidadMensajesSinLeer(0);
+				vista.setTecladoText("");
+				vista.CargarChat(vista.getConversacionAbierta());
 			}
-			vista.getConversacionAbierta().SetCantidadMensajesSinLeer(0);
-			vista.setTecladoText("");
-			vista.CargarChat(vista.getConversacionAbierta().mostrarMensajes());
-			vista.ActualizaListaContactos();
-		}*/
+		}
 	}
 	
 	

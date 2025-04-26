@@ -38,8 +38,8 @@ public class Conversacion implements IFuncionalidadConversacion{
         return sb.toString();
 	}
 
-	public void addMensaje(String nombreMensaje, String texto, boolean elMensajeEsPropio) {
-		mensajes.add(new Mensaje(nombreMensaje,texto, elMensajeEsPropio));
+	public void addMensaje(String nombreEmisor, String texto, boolean elMensajeEsPropio) {
+		mensajes.add(new Mensaje(nombreEmisor,texto, elMensajeEsPropio));
 		cantidadMensajesSinLeer++;
 	}
 	
@@ -47,7 +47,7 @@ public class Conversacion implements IFuncionalidadConversacion{
 		return mensajes;
 	}
 
-	public Object getNickName() {
+	public String getNickName() {
 		return nickname;
 	}
 
