@@ -20,13 +20,16 @@ public class Servidor {
 	private static final int PUERTO_SERVIDOR = 1234;
 	private ServerSocket serverSocket;
 	
+	private static HashMap<String,Socket> SocketsDeUsuarios ;
+
 	private Servidor() {
 	}
 	
 	public static Servidor getInstancia() {
 		if(instancia == null) {
 			instancia = new Servidor();
-		}
+			SocketsDeUsuarios=new HashMap<String,Socket>();
+		}	
 		return instancia;
 	}
 	
@@ -42,13 +45,11 @@ public class Servidor {
 
                     // crea el hilo para las solicitudes
                     new Thread(() -> manejarCliente(socket)).start();
-                    System.out.println("Estamos fuera del hilo que atiende al cliente");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
-        System.out.println("Estamos fuera del hilo que acepta nuevas conexiones");
     }
 	
 	private void manejarCliente(Socket socket) {
@@ -82,10 +83,13 @@ public class Servidor {
             			System.out.println("ENVIANDO MENSAJE SERVIDOR");
             			enviarMensaje(nombreUsuario,Mensaje,NicknameReceptor);
             			break;
-                    case "AGENDAR":
+                    /* El servidor no aceptar "Agendar", le envia el directorio completo al cliente
+                     * Y el cliente con el directorio elige a quien agendar.
+                     * case "AGENDAR":
+                     * 
                     	nombreUsuario = dataArray[1];
             			Directorio.getInstance().mostrarDirectorio(nombreUsuario,socket);
-            			break;
+            			break;]*/
             		default:
             			System.out.println("Solicitud ("+SOLICITUD+") desconocida");
             			break;
@@ -109,7 +113,8 @@ public class Servidor {
 
 	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
-		Socket socket_receptor = Directorio.getInstance().devuelveSocketUsuario(nick_receptor);
+		//Socket socket_receptor = Directorio.getInstance().devuelveSocketUsuario(nick_receptor);
+		Socket socket_receptor = this.SocketsDeUsuarios.get(nick_receptor);
 		if(!socket_receptor.isClosed()) {
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
 			String mensaje_enviar = "MENSAJE" + "`" + nick_emisor + "`" + mensaje;
@@ -126,19 +131,34 @@ public class Servidor {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		String mensaje_enviar = "RES-REGISTRO"+ "`";
 		if(!Directorio.getInstance().contieneUsuario(nickname)) { //nickname no esta registrado
-			Directorio.getInstance().agregarUsuario(nickname, socket);
 			System.out.println("registro de usuario: " + nickname);
 			mensaje_enviar +=  "OK"+"`"+"Registro exitoso";
+			//Hay un nuevo usuario y se deberia actualizar el directorio
+			//tanto del servidor como de todos los clientes
+			this.SocketsDeUsuarios.put(nickname,socket);
+			//Se agrega al hashmap<nickname,socket> de esta clase
+			Directorio.getInstance().agregarUsuario(nickname, new Usuario(nickname));
+			ActualizaDirectoriosClientes();
 		}
 		else {
 			System.out.println("Error Usuario ya existente");
 			mensaje_enviar += "Error"+ "`" +"Usuario ya existente";
 		}
 		out.writeUTF(mensaje_enviar);
-		//Tambien hay que enviarla el directorio
-		out.writeUTF(Directorio.getInstance().getDirectorioFormateado());
 	}
 	
+	private void ActualizaDirectoriosClientes() {
+		for (Socket socket : SocketsDeUsuarios.values()) {
+		    try {
+		        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		        out.writeUTF(Directorio.getInstance().getDirectorioFormateado());
+		        out.flush(); 
+		    } catch (IOException e) {
+		        System.out.println("Error al enviar al socket: " + e.getMessage());
+		    }
+		}
+	}
+
 	private void iniciarSesion(String nickname) {
 		
 	}

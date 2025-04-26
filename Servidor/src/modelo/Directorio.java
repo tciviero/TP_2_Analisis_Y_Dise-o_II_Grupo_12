@@ -1,26 +1,18 @@
 package modelo;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
-import vista.VentanaDirectorio;
 
 public class Directorio {
-	private HashMap<String,Socket> usuarios ;
-	private VentanaDirectorio ventana ;
+	private HashMap<String,Usuario> usuarios ;
+
+	//	private VentanaDirectorio ventana ;
 	
 	private static Directorio instance =null;
 	
 	private Directorio() {
-		usuarios = new HashMap<String,Socket>();
-		ventana = new VentanaDirectorio();
+		usuarios = new HashMap<String,Usuario>();
+		//ventana = new VentanaDirectorio();
 	}
 	
 	public static Directorio getInstance() {
@@ -34,17 +26,16 @@ public class Directorio {
 		return this.usuarios.containsKey(nickname);
 	}
 	
-	public void agregarUsuario(String nickname, Socket socket) {
-		this.usuarios.put(nickname, socket);
-		//Actualizar vista
-		
+	public void agregarUsuario(String nickname, Usuario nuevo) {
+		this.usuarios.put(nickname, nuevo);
 	}
+
 	
-	public Socket devuelveSocketUsuario(String nickname) {
+	public Usuario devuelveUsuario(String nickname) {
 		return this.usuarios.get(nickname);
 	}
 	
-	public void mostrarDirectorio(String usuarioSolicitante,Socket socket_solicitante) {
+	/*public void mostrarDirectorio(String usuarioSolicitante,Socket socket_solicitante) {
 		String[] usuarios_registrados = usuarios.keySet().toArray(new String[0]);
         this.ventana.mostrarDirectorio(usuarios_registrados, seleccionados -> {
             System.out.println("Usuarios seleccionados:");
@@ -76,7 +67,7 @@ public class Directorio {
 				e.printStackTrace();
 			}
         });
-	}
+	}*/
 
 	public String[] getUsuarios() {
 		return usuarios.keySet().toArray(new String[0]);

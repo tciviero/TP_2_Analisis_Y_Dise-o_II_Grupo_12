@@ -315,7 +315,7 @@ public class VentanaChat extends JFrame implements IVista  {
 	
 	public void conectado() {
 		setContentPane(chatPane);
-		setBounds(10, 10, 1080, 680);
+		setBounds(50, 50, 1085, 695);
 		revalidate();
 	}
 	

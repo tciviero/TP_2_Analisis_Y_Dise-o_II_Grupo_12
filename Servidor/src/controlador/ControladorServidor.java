@@ -37,7 +37,6 @@ public class ControladorServidor{
 		Puerto_Servidor = 1234;
 		vista = new VentanaServidor(IP_Servidor,Puerto_Servidor);
 		Servidor.getInstancia().Iniciar();
-		System.out.println("Esto no se ejecuta");
 	}
 	
 	public void ActualizarVistas() {
