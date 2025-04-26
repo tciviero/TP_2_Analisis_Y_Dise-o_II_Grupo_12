@@ -15,7 +15,6 @@ public interface IVista extends INotificable{
 	void CargarChat(String mensajes);
 	Contacto getContactoSeleccionado();
 	void ActualizaListaContactos();
-	void conectado();
 	void ContactoSeleccionadoEsChat();
 	Contacto getContactoChat();
 	void OnRegistroContactoExitoso();
@@ -25,4 +24,5 @@ public interface IVista extends INotificable{
 	void onFalloPuertoSinUso();
 	Contacto getConversacionSelected();
 	String getPuertoUsuarioText();
+	
 }

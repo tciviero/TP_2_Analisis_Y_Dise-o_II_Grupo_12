@@ -35,4 +35,14 @@ public class Usuario {
 		return mensajesPendientes;
 	}
 
+
+	public String getEstado() {
+		if(Conectado) {
+			return "Online";
+		}
+		else {
+			return "Offline";
+		}
+	}
+
 }

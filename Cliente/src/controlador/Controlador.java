@@ -90,30 +90,47 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	
 
 	private void registrar() {
-		vista.conectado();
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		
 		try {
-			//Inicio al usuario que automaticamente se queda escuchando
-			//En su puerto, 
-			Usuario.getInstancia().Iniciar(nombre, this.IP_Usuario, puerto);
+			if(!Usuario.getInstancia().isConectado()) {
+				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+				Usuario.getInstancia().Conectar();
+			}
+			Usuario.getInstancia().enviarRequestRegistro();
 		} catch (SocketTimeoutException e) {
 			System.out.println("No fue posible conectarse con el servidor");
-		}
-		catch(IOException e) {
+		}catch (IOException e) {
 			e.printStackTrace();
 		}
-		//intento conectarme al servidor, si ok, recibo lista de contactos
-		//try {
-			//usuario.conectar(nombre, crearIP(), puerto);
-		//} catch (IOException e) {
-			// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
+	}
 
+	private void inicioSesion() {
+		String nombre = this.vista.getNickNameUsuarioText();
+		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
+		
+		try {
+			if(!Usuario.getInstancia().isConectado()) {
+				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+				Usuario.getInstancia().Conectar();
+				System.out.println("Usuario conectado");
+			}
+			else {
+				System.out.println("Se rompe cuando se llama a enviarRequest??");
+				Usuario.getInstancia().enviarRequestInicioSesion();
+			}
+		} catch (SocketTimeoutException e) {
+			System.out.println("No fue posible conectarse con el servidor");
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
+	/*public void RegistroOInicioExitoso() {
+		vista.conectado();
+		
+	}*/
 	
 	private void hablar() {
 		IVerConversacion contactoSeleccionado = vista.getContactoSeleccionado();
@@ -137,9 +154,6 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 	}
 	
-	private void inicioSesion() {
-		//envio para iniciar sesion y recibir mensajes pendientes, etc
-	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -147,7 +161,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		if(comando.equalsIgnoreCase("REGISTRAR")) {
 			registrar();
 		}
-		else if(comando.equalsIgnoreCase("INICIAR SESION")) {
+		else if(comando.equalsIgnoreCase("INICIAR")) {
 			inicioSesion();
 		}
 		else if(comando.equalsIgnoreCase("HABLAR")) {
@@ -157,7 +171,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			enviar();
 		}
 		else {
-			
+			System.out.println("Se recibio el "+comando);
 		}
 	}
 

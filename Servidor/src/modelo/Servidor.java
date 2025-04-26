@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import controlador.ControladorServidor;
 
@@ -74,7 +75,7 @@ public class Servidor {
                         break;
                     case "INICIAR":
                     	nombreUsuario = dataArray[1];
-            			iniciarSesion(nombreUsuario);
+            			iniciarSesion(nombreUsuario,socket);
             			break;
                     case "MENSAJE":
                     	nombreUsuario = dataArray[1];
@@ -84,9 +85,9 @@ public class Servidor {
             			enviarMensaje(nombreUsuario,Mensaje,NicknameReceptor);
             			break;
                     /* El servidor no aceptar "Agendar", le envia el directorio completo al cliente
-                     * Y el cliente con el directorio elige a quien agendar.
-                     * case "AGENDAR":
-                     * 
+                      	Y el cliente con el directorio elige a quien agendar.
+                      	case "AGENDAR":
+                      
                     	nombreUsuario = dataArray[1];
             			Directorio.getInstance().mostrarDirectorio(nombreUsuario,socket);
             			break;]*/
@@ -100,7 +101,17 @@ public class Servidor {
             }
 
         } catch (IOException e) {
-            System.out.println("Cliente desconectado.");
+            String nombre=Servidor.getNickname(socket);
+        	System.out.println("Cliente desconectado:"+nombre);
+        	
+            //Antes de avisar a todos que se desconecto, es necesario
+        	//Quitarlo del hashmap del servidor para que no tire error
+        	//Sale "Error al enviar al socket"
+        	if(nombre!=null) {
+        		SocketsDeUsuarios.remove(nombre);
+        		Directorio.getInstance().NotificarDesconeccion(nombre);
+        	}
+            
             
         } finally {
             try {
@@ -135,9 +146,9 @@ public class Servidor {
 			mensaje_enviar +=  "OK"+"`"+"Registro exitoso";
 			//Hay un nuevo usuario y se deberia actualizar el directorio
 			//tanto del servidor como de todos los clientes
-			this.SocketsDeUsuarios.put(nickname,socket);
+			Servidor.SocketsDeUsuarios.put(nickname,socket);
 			//Se agrega al hashmap<nickname,socket> de esta clase
-			Directorio.getInstance().agregarUsuario(nickname, new Usuario(nickname));
+			Directorio.getInstance().agregarUsuario(new Usuario(nickname));
 			ActualizaDirectoriosClientes();
 		}
 		else {
@@ -147,7 +158,7 @@ public class Servidor {
 		out.writeUTF(mensaje_enviar);
 	}
 	
-	private void ActualizaDirectoriosClientes() {
+	public void ActualizaDirectoriosClientes() {
 		for (Socket socket : SocketsDeUsuarios.values()) {
 		    try {
 		        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -159,12 +170,34 @@ public class Servidor {
 		}
 	}
 
-	private void iniciarSesion(String nickname) {
-		
+	private void iniciarSesion(String nickname, Socket socket) throws IOException {
+		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		String mensaje_enviar = "RES-INICIO"+ "`";
+		if(Directorio.getInstance().contieneUsuario(nickname)) {
+			if (SocketsDeUsuarios.containsKey(nickname)) {
+				SocketsDeUsuarios.remove(nickname);
+			}
+			SocketsDeUsuarios.put(nickname, socket);
+			Directorio.getInstance().NotificarConeccion(nickname);
+			mensaje_enviar +=  "OK"+"`"+"Inicio exitoso";
+		}
+		else {
+			mensaje_enviar += "Error"+ "`" +"El usuario no existe";
+		}
+		out.writeUTF(mensaje_enviar);
 	}
 	
 	public boolean isConectado() {
 		return conectado;
+	}
+	
+	public static String getNickname(Socket socket) {
+	    for (Map.Entry<String, Socket> entry : SocketsDeUsuarios.entrySet()) {
+	        if (entry.getValue().equals(socket)) {
+	            return entry.getKey(); // Este es el nickname
+	        }
+	    }
+	    return null; // si no se encuentra
 	}
 
 }

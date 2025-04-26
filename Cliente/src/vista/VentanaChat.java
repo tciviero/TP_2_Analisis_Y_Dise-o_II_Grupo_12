@@ -91,6 +91,18 @@ public class VentanaChat extends JFrame implements IVista  {
 		NickNameUsuario = new JTextField();
 		NickNameUsuario.setBounds(74, 8, 86, 20);
 		NickNameUsuario.setColumns(10);
+		NickNameUsuario.addKeyListener(new KeyAdapter() {
+			//Esto verifica que solo se ingresen numeros en el TextField de puerto
+			//Si no es un numero lo borra
+			//Tampoco permite ingresar más de 5 caracteres
+			@Override
+			public void keyTyped(KeyEvent e) {
+				if(PuertoUsuario.getText().length()>0 && NickNameUsuario.getText().length()>0) {
+					btnRegistrar.setEnabled(true);
+					btnIniciarSesion.setEnabled(true);
+				}
+			}
+		});
 		panel_Inicio.add(NickNameUsuario);
 		
 		JLabel lblPuerto = new JLabel("Puerto:");
@@ -117,6 +129,10 @@ public class VentanaChat extends JFrame implements IVista  {
 				if(PuertoUsuario.getText().length()>4) {
 					e.consume();
 				}
+				if(PuertoUsuario.getText().length()>0 && NickNameUsuario.getText().length()>0) {
+					btnRegistrar.setEnabled(true);
+					btnIniciarSesion.setEnabled(true);
+				}
 			}
 		});
 		panel_Inicio.add(PuertoUsuario);
@@ -124,11 +140,13 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnRegistrar= new JButton("Registrarse");
 		btnRegistrar.setActionCommand("REGISTRAR");
 		btnRegistrar.setBounds(190, 20, 110, 23);
+		btnRegistrar.setEnabled(false);
 		panel_Inicio.add(btnRegistrar);
 		
 		btnIniciarSesion= new JButton("Iniciar sesión");
-		btnIniciarSesion.setActionCommand("INICIAR SESION");
+		btnIniciarSesion.setActionCommand("INICIAR");
 		btnIniciarSesion.setBounds(190, 60, 110, 23);
+		btnIniciarSesion.setEnabled(false);
 		panel_Inicio.add(btnIniciarSesion);
 		
 //-------panel_Contactos---------------------------------------------------------
@@ -350,6 +368,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnIniciarConversacion.addActionListener(var1);
 		btnRegistrar.addActionListener(var1);
 		btnEnviar.addActionListener(var1);
+		btnIniciarSesion.addActionListener(var1);
 	}
 
 
@@ -396,6 +415,11 @@ public class VentanaChat extends JFrame implements IVista  {
 	public void OnRegistroContactoExitoso() {
 		new JNotification("Contacto registrado exitosamente!");
 	}
+	
+	@Override
+	public void OnNuevoNotificacion(String mensaje) {
+		new JNotification(mensaje);
+	}
 
 
 	@Override
@@ -423,11 +447,5 @@ public class VentanaChat extends JFrame implements IVista  {
 
 
 	
-
-
-
-
-
-
 
 }

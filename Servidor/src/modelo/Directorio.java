@@ -1,17 +1,21 @@
 package modelo;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+
+import controlador.ControladorServidor;
 
 
 public class Directorio {
-	private HashMap<String,Usuario> usuarios ;
+	private ArrayList<Usuario> usuarios ;
+	//Cambie el directorio de hashmap a array porque necesito
+	//Que esten ordenados alfabeticamente
 
 	//	private VentanaDirectorio ventana ;
 	
 	private static Directorio instance =null;
 	
 	private Directorio() {
-		usuarios = new HashMap<String,Usuario>();
+		usuarios = new ArrayList<Usuario>();
 		//ventana = new VentanaDirectorio();
 	}
 	
@@ -23,16 +27,33 @@ public class Directorio {
 	}
 	
 	public boolean contieneUsuario(String nickname) {
-		return this.usuarios.containsKey(nickname);
+		for (Usuario u : usuarios) {
+	        if (u.getNickname().equalsIgnoreCase(nickname)) {
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 	
-	public void agregarUsuario(String nickname, Usuario nuevo) {
-		this.usuarios.put(nickname, nuevo);
+	public void agregarUsuario(Usuario nuevo) {
+		String nicknameNuevo = nuevo.getNickname();
+	    int i = 0;
+
+	    while (i < usuarios.size() && 
+	           usuarios.get(i).getNickname().compareToIgnoreCase(nicknameNuevo) < 0) {
+	        i++;
+	    }
+	    this.usuarios.add(i, nuevo); // lo inserta en la posición correcta
 	}
 
 	
 	public Usuario devuelveUsuario(String nickname) {
-		return this.usuarios.get(nickname);
+		for (Usuario u : usuarios) {
+	        if (u.getNickname().equals(nickname)) {
+	            return u;
+	        }
+	    }
+	return null; 
 	}
 	
 	/*public void mostrarDirectorio(String usuarioSolicitante,Socket socket_solicitante) {
@@ -69,19 +90,48 @@ public class Directorio {
         });
 	}*/
 
-	public String[] getUsuarios() {
-		return usuarios.keySet().toArray(new String[0]);
+	public ArrayList<String> getUsuarios() {
+		ArrayList<String> DirectorioParaVista = new ArrayList<String>();
+	    for (Usuario u :usuarios) {
+	    	DirectorioParaVista.add(u.getNickname()+"    ["+u.getEstado()+"]");
+	    }
+	    return DirectorioParaVista;
 	}
 	
+	
+	//Este getDirectorioFormateado es para enviar
+	//A traves del Gestor de Conexiones
 	public String getDirectorioFormateado() {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("DIRECTORIO`");
 	    sb.append(usuarios.size());
 
-	    for (String nombre : usuarios.keySet()) {
-	        sb.append("`").append(nombre);
+	    for (Usuario u: usuarios) {
+	    	sb.append("`").append(u.getNickname());
+	    	if(u.isConectado()) {
+		    	sb.append("`").append("Online");
+	    	}
+	    	else {
+		    	sb.append("`").append("Offline");   		
+	    	}
 	    }
 
 	    return sb.toString();
+	}
+
+	public void NotificarDesconeccion(String nombre) {
+		Usuario u = devuelveUsuario(nombre);
+		u.setConectado(false);
+		
+		Servidor.getInstancia().ActualizaDirectoriosClientes();
+		ControladorServidor.getInstance().ActualizarVistas();
+	}
+
+	public void NotificarConeccion(String nickname) {
+		Usuario u = devuelveUsuario(nickname);
+		u.setConectado(true);
+		
+		Servidor.getInstancia().ActualizaDirectoriosClientes();
+		ControladorServidor.getInstance().ActualizarVistas();
 	}
 }

@@ -14,17 +14,21 @@ import modelo.Contacto.IActualizarMensajes;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
+	private static Usuario instancia = null;
+
 	private int puerto;
 	private String nickName,ip;
+
 	private ArrayList<Contacto> contactos;
 	private ArrayList<Contacto> conversaciones;
-	private ArrayList<String> directorio;
-	private static Usuario instancia = null;
-	private ServerSocket serverSocket;
+	private ArrayList<UsuarioYEstado> directorio;
 	private ArrayList<INotificable> suscriptores;
-	private boolean ejecutando = false;
+	
+	private boolean Conectado = false;
+
 	private final int PUERTO_SERVIDOR = 1234;
 	private Socket socket;	//con el socket se comunica con el servidor
+	private ServerSocket serverSocket;
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
@@ -44,7 +48,17 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 
-		
+	private void EventoNotificacionRecibido(String mensaje) {
+		for (INotificable suscriptor: suscriptores) {
+			suscriptor.OnNuevoNotificacion(mensaje);
+		}
+	}
+	private void VistaConectado() {
+		for (INotificable suscriptor: suscriptores) {
+			suscriptor.conectado();
+		}
+	}
+	
 	public static Usuario getInstancia() {
 		if(instancia == null) {
 			instancia = new Usuario();
@@ -52,16 +66,13 @@ public class Usuario implements IFuncionalidadUsuario {
 		return instancia;
 	}
 	
-	public void Iniciar(String Nombre, String ip, int puerto) throws IOException {
+	public void Iniciar(String Nombre, String ip, int puerto) {
 		this.puerto = puerto;
 		this.ip = ip;
 		this.nickName = Nombre;
 		this.contactos = new ArrayList<Contacto>();
 		this.conversaciones = new ArrayList<Contacto>();
-		this.directorio = new ArrayList<String>();
-		Conectar();	// Esto es para conectar con el servidor
-		//Se queda esperando la respuesta del servidor en un hilo
-		enviarRequestRegistro(); //Envia solicitud de registro al server
+		this.directorio = new ArrayList<UsuarioYEstado>();
 	}
 	
 	public void Conectar() throws IOException {
@@ -75,6 +86,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	private void EscucharMensajesServidor(Socket socket){
 		try {
 			System.out.println("Dentro de un hilo conectado al servidor... esperando");
+			this.Conectado=true;
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 			while(true) {
 				String data = in.readUTF();
@@ -85,21 +97,25 @@ public class Usuario implements IFuncionalidadUsuario {
 				
 				switch(respuesta) {
 				case "RES-REGISTRO":
-					if(dataArray[1] == "OK") {
-						//registro exitoso
+					if(dataArray[1].equalsIgnoreCase("OK")) {
 						System.out.println("Usuario registrado exitosamente");
+						EventoNotificacionRecibido(dataArray[2]);
+						VistaConectado();
 					}
 					else {
-						System.out.println("Se recibio un error:"+dataArray[2]);
-						//error registro
+						System.out.println("Error de registro:"+dataArray[2]);
+						EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
 					}
 				    break;
-				case "Res-inicio":
-					if(dataArray[1] == "OK") {
-						//inicio exitoso
+				case "RES-INICIO":
+					if(dataArray[1].equalsIgnoreCase("OK")) {
+						System.out.println("Usuario Logueado exitosamente");
+						EventoNotificacionRecibido(dataArray[2]);
+						VistaConectado();
 					}
 					else {
-						//error inicio
+						System.out.println("Error de Inicio:"+dataArray[2]);
+						EventoNotificacionRecibido("Error de Inicio:"+dataArray[2]);
 					}
 					break;
 				case "Res-envio":
@@ -115,7 +131,10 @@ public class Usuario implements IFuncionalidadUsuario {
 					int cantidadContactos = Integer.parseInt(dataArray[1]);
 					this.directorio.clear();
 					for (int i = 2; i < dataArray.length; i++) {
-						this.directorio.add(dataArray[i]);
+						String nickname=dataArray[i];
+						i++;
+						String estado= dataArray[i];
+						this.directorio.add(new UsuarioYEstado(nickname,estado));
 					}
 					EventoDirectorioRecibido();
 					break;
@@ -125,19 +144,27 @@ public class Usuario implements IFuncionalidadUsuario {
 				}
 			}
 		} catch (IOException e) {
+			this.Conectado=false;
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	
+	public boolean isConectado() {
+		return Conectado;
+	}
+
 	private void EventoDirectorioRecibido() {
 		for (INotificable suscriptor: suscriptores) {
-			suscriptor.ActualizarDirectorio(this.directorio);
+			ArrayList<String> DirectorioFormateado = new ArrayList<String>();
+			for(UsuarioYEstado ue:this.directorio) {
+				DirectorioFormateado.add(ue.getNickname()+"    ["+ue.getEstado()+"]");
+			}
+			suscriptor.ActualizarDirectorio(DirectorioFormateado);
 		}
 	}
 
-	private void enviarRequestRegistro() throws IOException {
+	public void enviarRequestRegistro() throws IOException {
 		if(!socket.isClosed()) {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "Registrar" + "`" + nickName;
@@ -146,11 +173,17 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 	
-	private void enviarRequestInicioSesion() throws IOException {
+	public void enviarRequestInicioSesion() {
 		if(!socket.isClosed()) {
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			String mensajeRegistro = "Iniciar" + "`" + nickName;
-			out.writeUTF(mensajeRegistro);
+			DataOutputStream out;
+			try {
+				out = new DataOutputStream(socket.getOutputStream());
+				String mensajeRegistro = "Iniciar" + "`" + nickName;
+				out.writeUTF(mensajeRegistro);
+			} catch (IOException e) {
+				//Se debe crear una notificacion
+				e.printStackTrace();
+			}
 		}
 	}
 	

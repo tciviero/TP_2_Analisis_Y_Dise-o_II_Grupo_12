@@ -93,10 +93,10 @@ public class VentanaServidor extends JFrame {
 	}
 
 
-	public void ActualizarDirectorio(String[] usuarios) {
+	public void ActualizarDirectorio(ArrayList<String> directorio) {
 		this.modelo.clear();
-		for (String c: usuarios) {
-			modelo.addElement(c);
+		for(String s:directorio) {
+			modelo.addElement(s);
 		}
 	}
 	

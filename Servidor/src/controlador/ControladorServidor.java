@@ -41,8 +41,8 @@ public class ControladorServidor{
 	
 	public void ActualizarVistas() {
 		String[] usuarios=null;
-		usuarios = Directorio.getInstance().getUsuarios();
-		this.vista.ActualizarDirectorio(usuarios);
+//		usuarios = Directorio.getInstance().getUsuarios();
+		this.vista.ActualizarDirectorio(Directorio.getInstance().getUsuarios());
 	}
 	
 	public String crearIP() {
