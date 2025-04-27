@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import excepciones.UsuarioConSesionActivaException;
+import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
 import modelo.Contacto.Contacto;
@@ -25,8 +28,9 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	private ArrayList<INotificable> suscriptores;
 	
-	private boolean Conectado = false;
+	public boolean estaConectado = false;
 
+	private static final String IP_SERVIDOR = "192.168.1.45";
 	private final int PUERTO_SERVIDOR = 1234;
 	private Socket socket;	//con el socket se comunica con el servidor
 	private ServerSocket serverSocket;
@@ -84,10 +88,17 @@ public class Usuario implements IFuncionalidadUsuario {
 		}).start();
 	}
 	
+	public void iniciarSesion(String nickname) throws IOException {
+		this.Conectar();
+		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		String mensaje_servidor = "INICIAR`" + nickname;
+		out.writeUTF(mensaje_servidor);
+	}
+	
 	private void EscucharMensajesServidor(Socket socket){
 		try {
 			System.out.println("Dentro de un hilo conectado al servidor... esperando");
-			this.Conectado=true;
+			//this.Conectado=true;
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 			while(true) {
 				String data = in.readUTF();
@@ -100,6 +111,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				case "RES-REGISTRO":
 					if(dataArray[1].equalsIgnoreCase("OK")) {
 						System.out.println("Usuario registrado exitosamente");
+						this.estaConectado = true;
 						EventoNotificacionRecibido(dataArray[2]);
 						VistaConectado();
 					}
@@ -111,6 +123,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				case "RES-INICIO":
 					if(dataArray[1].equalsIgnoreCase("OK")) {
 						System.out.println("Usuario Logueado exitosamente");
+						this.estaConectado = true;
 						EventoNotificacionRecibido(dataArray[2]);
 						VistaConectado();
 					}
@@ -140,6 +153,7 @@ public class Usuario implements IFuncionalidadUsuario {
 						String nickname=dataArray[i];
 						i++;
 						String estado= dataArray[i];
+						System.out.println("usuario: " + nickname + estado);
 						this.directorio.add(new UsuarioYEstado(nickname,estado));
 					}
 					EventoDirectorioRecibido();
@@ -150,15 +164,15 @@ public class Usuario implements IFuncionalidadUsuario {
 				}
 			}
 		} catch (IOException e) {
-			this.Conectado=false;
+			//this.Conectado=false;
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public boolean isConectado() {
+	/*public boolean isConectado() {
 		return Conectado;
-	}
+	}*/
 
 	private void EventoDirectorioRecibido() {
 		for (INotificable suscriptor: suscriptores) {
@@ -175,17 +189,41 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 	
-	public void enviarRequestInicioSesion() {
-		if(!socket.isClosed()) {
-			DataOutputStream out;
-			try {
-				out = new DataOutputStream(socket.getOutputStream());
-				String mensajeRegistro = "Iniciar" + "`" + nickName;
-				out.writeUTF(mensajeRegistro);
-			} catch (IOException e) {
-				//Se debe crear una notificacion
-				e.printStackTrace();
+	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, UsuarioNoRegistradoException {
+		Socket socket;
+		try {
+			socket = new Socket(IP_SERVIDOR, PUERTO_SERVIDOR);
+			if(!socket.isClosed()) {
+				System.out.println("ENTRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+				DataOutputStream out;
+				try {
+					out = new DataOutputStream(socket.getOutputStream());
+					String mensajeRegistro = "COMPROBAR`" + nickname;
+					out.writeUTF(mensajeRegistro);
+					DataInputStream in = new DataInputStream(socket.getInputStream());
+					String respuesta_servidor = in.readUTF();
+					System.out.println("RESPUESTA: " + respuesta_servidor);
+					if(respuesta_servidor.equalsIgnoreCase("INICIO_OK")) { //se pudo iniciar sesion
+						respuesta_servidor = in.readUTF();
+						System.out.println("RESPUESTA: " + respuesta_servidor);
+						System.out.println("inicio de sesion OK"); //esta todo ok
+					}else if(respuesta_servidor.equalsIgnoreCase("YA_INICIADO")){
+						throw new UsuarioConSesionActivaException(nickname);
+					} else if(respuesta_servidor.equalsIgnoreCase("NO_REGISTRADO")) { //no fue registrado el usuario
+						throw new UsuarioNoRegistradoException(nickname);
+					}
+						
+				} catch (IOException e) { //server desconectado
+					//Se debe crear una notificacion
+					e.printStackTrace();
+				}
 			}
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -201,6 +239,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			
 			e.printStackTrace();
 		}
+	}
+	public boolean getEstaConectado() {
+		return this.estaConectado;
 	}
 	
 	@Override
@@ -284,8 +325,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 
-
-	
 
 	@Override
 	public void conectar(String nombre, String ip, int puerto) throws IOException {

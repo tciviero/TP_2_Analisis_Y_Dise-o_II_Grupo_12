@@ -493,6 +493,16 @@ public class VentanaChat extends JFrame implements IVista  {
 	public void OnNuevoNotificacion(String mensaje) {
 		new JNotification(mensaje);
 	}
-	
+
+	@Override
+	public void onFalloUsuarioConSesionActiva(String nickname) {
+		new JNotification("El usuario " + nickname + " ya tiene una sesion activa.");
+	}
+
+
+	@Override
+	public void onFalloUsuarioNoRegistrado(String nickname) {
+		new JNotification("El usuario " + nickname + " no fue registrado.");
+	}
 
 }

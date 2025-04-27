@@ -37,4 +37,7 @@ public interface IVista extends INotificable{
 	void onFalloPuertoFueraRango();
 	void onFalloPuertoSinUso();
 
+	void onFalloUsuarioConSesionActiva(String nickname);
+	void onFalloUsuarioNoRegistrado(String nickname);
+
 }
