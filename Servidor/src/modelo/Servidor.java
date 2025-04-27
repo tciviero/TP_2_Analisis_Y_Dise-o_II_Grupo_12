@@ -20,6 +20,7 @@ public class Servidor {
 	private static final String IP_SERVIDOR = "192.168.1.45";
 	private static final int PUERTO_SERVIDOR = 1234;
 	private ServerSocket serverSocket;
+	private static MensajesUsuario mensajesUsuario;
 	
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	
@@ -30,6 +31,7 @@ public class Servidor {
 		if(instancia == null) {
 			instancia = new Servidor();
 			SocketsDeUsuarios=new HashMap<String,Socket>();
+			mensajesUsuario = new MensajesUsuario();
 		}	
 		return instancia;
 	}
@@ -129,17 +131,18 @@ public class Servidor {
 
 	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
-		//Socket socket_receptor = Directorio.getInstance().devuelveSocketUsuario(nick_receptor);
 		Socket socket_receptor = getSocket(nick_receptor);
-		
-		if(!socket_receptor.isClosed()) {
+				
+		if(Directorio.getInstance().usuarioEstaConectado(nick_receptor)) { //si esta conectado lo envia
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
 			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje;
 			System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje_enviar);
 			out.flush();
 			out.writeUTF(mensaje_enviar);
-		}else
-			System.out.println("SOCKET CERRADO");
+		} else {
+			System.out.println("usuario receptor: " + nick_receptor + " esta desconectado");
+			mensajesUsuario.agregarMensaje(nick_receptor, nick_emisor, mensaje); //lo guarda igual en el historial
+		}
 	}
 
 	//Se fija si ya esta existe el usuario en el directorio
@@ -181,8 +184,13 @@ public class Servidor {
 		SocketsDeUsuarios.put(nickname, socket);
 		Directorio.getInstance().NotificarConexion(nickname);
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		out.writeUTF(mensaje_enviar);
 		System.out.println("se inicia sesion" + nickname);
+		
+		//mensajesUsuario.mostrarMensajes(); //aca hay que agarrar los mensajes de nickname y mandarselos para que cargue la vista
+		
+		mensaje_enviar += "`" + mensajesUsuario.historial_mensajes_recibidos(nickname);
+		
+		out.writeUTF(mensaje_enviar);
 	}
 
 	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {

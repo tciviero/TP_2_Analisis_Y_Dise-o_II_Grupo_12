@@ -129,18 +129,6 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 	}
 	
-	/*private void inicioSesion() {
-		String nombre = this.vista.getNickNameUsuarioText();
-		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
-		
-		Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
-		Usuario.getInstancia().Conectar();
-		
-		this.Conectar(); //levanta el socket
-		mensajeRegistro = "INICIAR`" + nickname;
-		out.writeUTF(mensajeRegistro); //pide iniciar sesion
-	}*/
-	
 	private void agendar() {
 		UsuarioYEstado usuario = vista.getUsuarioSeleccionado();
 		System.out.println("Se desea agendar a"+usuario.getNickname());
@@ -149,14 +137,6 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	}
 	
 	private void hablar() {
-		/*
-		IVerConversacion contactoSeleccionado = vista.getContactoSeleccionado();
-		contactoSeleccionado.SetCantidadMensajesSinLeer(0);
-		vista.CargarChat(contactoSeleccionado.mostrarMensajes());
-		vista.ContactoSeleccionadoEsChat();*/
-		
-		//Si la conversacion no existe se crea
-		//
 		Contacto seleccionado = vista.getContactoSeleccionado();
 		Conversacion aAbrir = Usuario.getInstancia().getConversacion(seleccionado.getNickName());
 		vista.CargarChat(aAbrir);
