@@ -1,5 +1,5 @@
 package modelo.usuario;
 
 public interface IRecibir {
-	void NuevoMensajeRecibido(String[] arrayMensaje);
+	void NuevoMensajeRecibido(String Emisor,String texto);
 }

@@ -1,4 +1,4 @@
-package modelo.Contacto;
+package modelo;
 
 public interface IVerConversacion {
 	void SetCantidadMensajesSinLeer(int num);

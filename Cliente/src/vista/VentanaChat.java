@@ -5,8 +5,8 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionListener;
 
+import modelo.Conversacion;
 import modelo.Contacto.Contacto;
-import modelo.Contacto.IVerConversacion;
 import modelo.usuario.Usuario;
 import modelo.usuario.UsuarioYEstado;
 
@@ -17,7 +17,6 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JFormattedTextField;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -44,9 +43,9 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JButton btnAgendar;
 	
 	
-	private ArrayList<Contacto> listaConversaciones;
-	private DefaultListModel<Contacto> modeloConversacion;
-	private JList<Contacto> Lista_Conversacion;
+	private ArrayList<Conversacion> listaConversaciones;
+	private DefaultListModel<Conversacion> modeloConversacion;
+	private JList<Conversacion> Lista_Conversacion;
 	
 	private ArrayList<Contacto> listaContactos;
 	private DefaultListModel<Contacto> modelo;
@@ -54,9 +53,10 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JButton btnIniciarConversacion; 	
 	
 	private JPanel panel_Chat ;
+	private JLabel lblTituloChat;
 	private JTextArea Chat;
 	private JTextField Teclado;
-	private Contacto contactoChatAbierto;
+	private Conversacion ConversacionAbierta;
 
 	private ArrayList<UsuarioYEstado> Directorio;
 	private DefaultListModel modeloDirectorio;
@@ -65,7 +65,7 @@ public class VentanaChat extends JFrame implements IVista  {
 
 	
 	public VentanaChat(String Ip_usuario) {
-		contactoChatAbierto = null;
+		ConversacionAbierta = null;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 355, 155);
 		
@@ -166,7 +166,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		
 		
 		listaContactos = new ArrayList<Contacto>();
-		modelo = new DefaultListModel<>();
+		modelo = new DefaultListModel<Contacto>();
 		Lista_Contactos = new JList<Contacto>(modelo);
 		Lista_Contactos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		Lista_Contactos.addListSelectionListener(e->{
@@ -175,7 +175,17 @@ public class VentanaChat extends JFrame implements IVista  {
 				Contacto c = Lista_Contactos.getSelectedValue();
 				if(c!=null) {
 					//System.out.println("Se selecciono a "+c);
-					btnIniciarConversacion.setEnabled(true);
+					if(Usuario.getInstancia().ExisteConversacion(c.getNickName())) {
+						//Si la conversacion ya fue creada entonces se abre automaticamente.
+						//Cuando se selecciona en la seccion de contactos
+						this.ConversacionAbierta=Usuario.getInstancia().getConversacion(c.getNickName());
+						CargarChat(ConversacionAbierta);
+						btnIniciarConversacion.setEnabled(false);
+					}
+					else {
+						btnIniciarConversacion.setEnabled(true);
+					}
+					
 				}
 				else {//Aca no hay nadie seleccionado
 					btnIniciarConversacion.setEnabled(false);
@@ -190,10 +200,11 @@ public class VentanaChat extends JFrame implements IVista  {
 		sc.setBounds(10, 65, 180, 565);
 		panel_Contactos.add(sc);
 		
-		btnIniciarConversacion = new JButton("Hablar");
-		btnIniciarConversacion.setBounds(10, 40, 75, 20);
+		btnIniciarConversacion = new JButton("Crear conversacion");
+		btnIniciarConversacion.setBounds(10, 40, 150, 20);
+		//btnAgendar.setBounds(10, 40, 90, 20);
 		btnIniciarConversacion.setActionCommand("HABLAR");
-		btnIniciarConversacion.setEnabled(true);
+		btnIniciarConversacion.setEnabled(false);
 		panel_Contactos.add(btnIniciarConversacion);
 		
 //------panel_Conversaciones-----------------------------------------------
@@ -210,11 +221,23 @@ public class VentanaChat extends JFrame implements IVista  {
 		
 		
 		
-		listaConversaciones = new ArrayList<Contacto>();
+		listaConversaciones = new ArrayList<Conversacion>();
 		modeloConversacion = new DefaultListModel<>();
-		Lista_Conversacion = new JList<Contacto>(modeloConversacion);
+		Lista_Conversacion = new JList<Conversacion>(modeloConversacion);
 		Lista_Conversacion.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
+		Lista_Conversacion.addListSelectionListener(e->{
+			if(!e.getValueIsAdjusting()) { 
+				//Aca se solto el click cuando se selecciona un elemento
+				Conversacion c = Lista_Conversacion.getSelectedValue();
+				if(c!=null) {
+					//System.out.println("Se selecciono a "+c);
+						this.ConversacionAbierta=c;
+						CargarChat(ConversacionAbierta);
+				}
+			}
+		});
+		
+		
 		JScrollPane scrollConversaciones = new JScrollPane(Lista_Conversacion);
 		scrollConversaciones.setBounds(10, 65, 180, 565);
 		panel_Conversaciones.add(scrollConversaciones);
@@ -229,7 +252,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		chatPane.add(panel_Chat);
 		
 		
-		JLabel lblTituloChat = new JLabel("Chat con {NICKNAME_DE_CONTACTO_CON_LA_CONVER_CLICKEADA}");
+		lblTituloChat = new JLabel("Chat");
 		lblTituloChat.setBounds(10, 0, 400, 100);
 		lblTituloChat.setFont(new Font("Arial", Font.BOLD, 20));
 		panel_Chat.add(lblTituloChat);
@@ -321,52 +344,15 @@ public class VentanaChat extends JFrame implements IVista  {
 		return PuertoUsuario.getText();
 	}
 
-	
-	public Contacto getContactoSeleccionado() {
-		return Lista_Contactos.getSelectedValue();
-	}
-	
-	
-	
 	public String getTecladoText() {
 		return this.Teclado.getText();
 	}
+	
 	public void setTecladoText(String text) {
 		this.Teclado.setText(text);
 	}
 	
-	public void conectado() {
-		setContentPane(chatPane);
-		setBounds(50, 50, 1085, 695);
-		revalidate();
-	}
-	
-	public void ActualizaListaConversaciones() {
-		//El boton agregar contacto llama a este metodo para Actualizar el JList donde se ven los contactos
-		this.modeloConversacion.clear();
-		for (Contacto c: Usuario.getInstancia().getConversaciones()) {
-			modeloConversacion.addElement(c);
-
-		}
-	}
-
-
-	
-	@Override
-	public void ActualizaListaContactos() {
-		this.modelo.clear();
-		for(Contacto c:Usuario.getInstancia().getContactos()) {
-			modelo.addElement(c);
-		}
-	}
-
-
-	public void CargarChat(String mensajes) {
-		this.Chat.setText(mensajes);
-		this.panel_Chat.setVisible(true);
-	}
-
-
+//----------LISTENERS-----------------
 	@Override
 	public void addActionListener(ActionListener var1) {
 		Teclado.addActionListener(var1);
@@ -377,25 +363,106 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnAgendar.addActionListener(var1);
 	}
 
-
 	@Override
 	public void addListSelectionListener(ListSelectionListener var1) {
 		Lista_Conversacion.addListSelectionListener(var1);
 	}
 
+	
+//Parte de Inicio-registro-conexion
+	public void conectado() {
+		setContentPane(chatPane);
+		setBounds(50, 50, 1085, 695);
+		revalidate();
+	}
+
+//-----------DIRECOTORIO-----------
 	@Override
-	public void OnNuevoMensajeRecibido() {
-		//NOTIFICACION DE NUEVO MENSAJE RECIBIDO
-		ActualizaListaConversaciones();
-		if(contactoChatAbierto != null) {
-			contactoChatAbierto.SetCantidadMensajesSinLeer(0);
-			CargarChat(contactoChatAbierto.mostrarMensajes());
+	public UsuarioYEstado getUsuarioSeleccionado() {
+		return Lista_Directorio.getSelectedValue();
+	}
+
+	@Override
+	public void ActualizarDirectorio(ArrayList<UsuarioYEstado> directorio) {
+		// TODO Auto-generated method stub
+		this.modeloDirectorio.clear();
+		for(UsuarioYEstado s:directorio) {
+			modeloDirectorio.addElement(s);
 		}
 	}
 
-	
-	
+//-----------AGENDA-----------
+	public Contacto getContactoSeleccionado() {
+		return Lista_Contactos.getSelectedValue();
+	}
 
+	@Override
+	public void ActualizaListaContactos() {
+		this.modelo.clear();
+		for(Contacto c:Usuario.getInstancia().getContactos()) {
+			modelo.addElement(c);
+		}
+	}
+	
+	@Override
+	public void ContactoSeleccionadoEsChat() {
+		//Al contacto seleccionado
+		//Conversacion Abierta es la conversacion del contacto seleccionado
+		ConversacionAbierta=Usuario.getInstancia().getConversacion(getContactoSeleccionado().getNickName());
+	}
+
+//-----------Conversaciones-----------
+	@Override
+	public Conversacion getConversacionAbierta() {
+		return ConversacionAbierta;
+	}
+	
+	@Override
+	public Conversacion getConversacionSelected() {
+		return Lista_Conversacion.getSelectedValue();
+	}
+
+	
+	@Override
+	public void ActualizarListaConversaciones() {
+		//El boton hablar llama a este metodo para Actualizar el JList donde se ven las conversaciones
+		this.modeloConversacion.clear();
+		for (Conversacion c: Usuario.getInstancia().getConversaciones()) {
+			modeloConversacion.addElement(c);
+
+		}
+	}
+	
+	@Override
+	public void OnNuevoMensajeRecibido() {
+		//NOTIFICACION DE NUEVO MENSAJE RECIBIDO
+		ActualizarListaConversaciones();
+		if(ConversacionAbierta != null) {
+			ConversacionAbierta.SetCantidadMensajesSinLeer(0);
+			CargarChat(ConversacionAbierta);
+		}
+	}
+
+
+
+//-----------CHAT-----------	
+	
+/*	public void CargarChat(String mensajes) {
+		this.Chat.setText(mensajes);
+		this.panel_Chat.setVisible(true);
+		this.lblTituloChat.setText("Chat de "+ConversacionAbierta.getNickName());
+	}
+	*/
+	@Override
+	public void CargarChat(Conversacion c) {
+		this.Chat.setText(c.mostrarMensajes());
+		this.panel_Chat.setVisible(true);
+		this.lblTituloChat.setText("Chat de "+c.getNickName());
+		c.SetCantidadMensajesSinLeer(0);
+		ActualizarListaConversaciones();
+	}
+
+//--------NOTIFICACIONES-----------------
 	@Override
 	public void OnFalloEnvioMensaje() {
 		new JNotification("Error de conexión! Reintente");
@@ -427,40 +494,6 @@ public class VentanaChat extends JFrame implements IVista  {
 		new JNotification(mensaje);
 	}
 
-
-	@Override
-	public void ContactoSeleccionadoEsChat() {
-		contactoChatAbierto = getContactoSeleccionado();
-	}
-
-	@Override
-	public Contacto getContactoChat() {
-		return contactoChatAbierto;
-	}
-
-
-	@Override
-	public Contacto getConversacionSelected() {
-		return Lista_Conversacion.getSelectedValue();
-	}
-
-
-	@Override
-	public void ActualizarDirectorio(ArrayList<UsuarioYEstado> directorio) {
-		// TODO Auto-generated method stub
-		this.modeloDirectorio.clear();
-		for(UsuarioYEstado s:directorio) {
-			modeloDirectorio.addElement(s);
-		}
-	}
-
-
-	@Override
-	public UsuarioYEstado getUsuarioSeleccionado() {
-		return Lista_Directorio.getSelectedValue();
-	}
-
-
 	@Override
 	public void onFalloUsuarioConSesionActiva(String nickname) {
 		new JNotification("El usuario " + nickname + " ya tiene una sesion activa.");
@@ -471,14 +504,5 @@ public class VentanaChat extends JFrame implements IVista  {
 	public void onFalloUsuarioNoRegistrado(String nickname) {
 		new JNotification("El usuario " + nickname + " no fue registrado.");
 	}
-
-
-
-	
-
-	
-
-
-	
 
 }

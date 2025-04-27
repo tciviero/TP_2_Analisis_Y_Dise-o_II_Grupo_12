@@ -21,8 +21,9 @@ import javax.swing.event.ListSelectionListener;
 
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
+import modelo.Conversacion;
+import modelo.IVerConversacion;
 import modelo.Contacto.Contacto;
-import modelo.Contacto.IVerConversacion;
 import modelo.usuario.IFuncionalidadUsuario;
 import modelo.usuario.Usuario;
 import modelo.usuario.UsuarioYEstado;
@@ -142,29 +143,37 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	
 	private void agendar() {
 		UsuarioYEstado usuario = vista.getUsuarioSeleccionado();
+		System.out.println("Se desea agendar a"+usuario.getNickname());
 		Usuario.getInstancia().agendarContacto(usuario.getNickname());
 		vista.ActualizaListaContactos();
 	}
 	
 	private void hablar() {
+		/*
 		IVerConversacion contactoSeleccionado = vista.getContactoSeleccionado();
 		contactoSeleccionado.SetCantidadMensajesSinLeer(0);
 		vista.CargarChat(contactoSeleccionado.mostrarMensajes());
-		vista.ContactoSeleccionadoEsChat();
+		vista.ContactoSeleccionadoEsChat();*/
+		
+		//Si la conversacion no existe se crea
+		//
+		Contacto seleccionado = vista.getContactoSeleccionado();
+		Conversacion aAbrir = Usuario.getInstancia().getConversacion(seleccionado.getNickName());
+		vista.CargarChat(aAbrir);
+		vista.ActualizarListaConversaciones();
 	}
-	
+
 	private void enviar() {
 		String msg = vista.getTecladoText();
 		if(!msg.equalsIgnoreCase("")) {
-			try {
-				this.usuario.Envia(vista.getContactoChat(), msg);
-			} catch (IOException e) {
-				vista.OnFalloEnvioMensaje();
+			Conversacion actual= vista.getConversacionAbierta();
+			if(actual!=null) {
+				Usuario.getInstancia().enviarRequestMensaje(msg, actual.getNickName());
+				actual.addMensaje(Usuario.getInstancia().getNickName(), msg, true);
+				actual.SetCantidadMensajesSinLeer(0);
+				vista.setTecladoText("");
+				vista.CargarChat(vista.getConversacionAbierta());
 			}
-			vista.getContactoChat().SetCantidadMensajesSinLeer(0);
-			vista.setTecladoText("");
-			vista.CargarChat(vista.getContactoChat().mostrarMensajes());
-			vista.ActualizaListaContactos();
 		}
 	}
 	
@@ -172,6 +181,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String comando = e.getActionCommand();
+		System.out.println("Se apreto "+comando);
 		if(comando.equalsIgnoreCase("REGISTRAR")) {
 			registrar();
 		}
@@ -195,8 +205,8 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
 		if(!e.getValueIsAdjusting()) { 
-			Contacto contacto = vista.getConversacionSelected();
-			if(contacto != null) {
+			Conversacion c = vista.getConversacionSelected();
+			if(c != null) {
 				//MUESTRO CHAT DE CONVERSACION
 			}
 		}

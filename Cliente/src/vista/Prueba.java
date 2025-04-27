@@ -1,4 +1,4 @@
-package vista;
+/*package vista;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -275,23 +275,23 @@ public class Prueba extends JFrame {
 		btnAgendar.setBounds(10, 40, 90, 20);
 		panel_Directorio.add(btnAgendar);
 		
-/*		JLabel lblConversaciones = new JLabel("Conversaciones");
-		lblConversaciones.setFont(new Font("Arial", Font.BOLD, 20));
-		lblConversaciones.setBounds(10, 10, 200, 30);
-		panel_Conversaciones.add(lblConversaciones);
+//		JLabel lblConversaciones = new JLabel("Conversaciones");
+//		lblConversaciones.setFont(new Font("Arial", Font.BOLD, 20));
+//		lblConversaciones.setBounds(10, 10, 200, 30);
+//		panel_Conversaciones.add(lblConversaciones);
 		
 		
 		
-		listaConversaciones = new ArrayList<Contacto>();
-		modeloConversacion = new DefaultListModel<>();
-		Lista_Conversacion = new JList<Contacto>(modeloConversacion);
-		Lista_Conversacion.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+//		listaConversaciones = new ArrayList<Contacto>();
+//		modeloConversacion = new DefaultListModel<>();
+//		Lista_Conversacion = new JList<Contacto>(modeloConversacion);
+//		Lista_Conversacion.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		JScrollPane scrollConversaciones = new JScrollPane(Lista_Conversacion);
-		scrollConversaciones.setBounds(10, 65, 300, 565);
-		panel_Conversaciones.add(scrollConversaciones);
+//		JScrollPane scrollConversaciones = new JScrollPane(Lista_Conversacion);
+//		scrollConversaciones.setBounds(10, 65, 300, 565);
+//		panel_Conversaciones.add(scrollConversaciones);
 
-		*/
+		
 		
 		this.setVisible(true);
 	}
@@ -343,3 +343,4 @@ public class Prueba extends JFrame {
 
 
 }
+*/
