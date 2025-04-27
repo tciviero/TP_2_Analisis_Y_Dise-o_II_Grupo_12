@@ -126,6 +126,18 @@ public class Usuario implements IFuncionalidadUsuario {
 						this.estaConectado = true;
 						EventoNotificacionRecibido(dataArray[2]);
 						VistaConectado();
+						int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
+						if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
+							String emisor,mensaje;
+							int aux = 5;
+							for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
+								emisor = dataArray[aux];
+								mensaje = dataArray[aux+1];
+								aux += 2;
+								System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
+								NuevoMensajeRecibido(emisor,mensaje);
+							}
+						}
 					}
 					else {
 						System.out.println("Error de Inicio:"+dataArray[2]);
@@ -194,10 +206,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		try {
 			socket = new Socket(IP_SERVIDOR, PUERTO_SERVIDOR);
 			if(!socket.isClosed()) {
-				System.out.println("ENTRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-				DataOutputStream out;
 				try {
-					out = new DataOutputStream(socket.getOutputStream());
+					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 					String mensajeRegistro = "COMPROBAR`" + nickname;
 					out.writeUTF(mensajeRegistro);
 					DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -252,50 +262,10 @@ public class Usuario implements IFuncionalidadUsuario {
 		EventoNuevoMensajeRecibido();
 		
 	}
-/*	public void NuevoMensajeRecibido(String[] arrayMensaje) {
-		String nombreMensaje = arrayMensaje[0];
-		if(!nombreMensaje.equalsIgnoreCase("ping123")) { //este nombre se usa para testear si esta conectado el usuario
-			String ipMensaje = arrayMensaje[1];
-			int puertoMensaje = Integer.parseInt(arrayMensaje[2]);
-			String textoMensaje = arrayMensaje[3];
-			Contacto contactoMensaje = getContacto(ipMensaje, puertoMensaje);
-			int numAuxiliarNombre = 1;
-			String nuevoNombre = nombreMensaje;
-			if(contactoMensaje != null) {
-				contactoMensaje.addMensaje(nombreMensaje,textoMensaje, false);
-			}
-			else {
-				while(NombreYaUsado(nuevoNombre)) {
-					nuevoNombre = nombreMensaje + "(" + numAuxiliarNombre + ")";
-					numAuxiliarNombre++;
-				}
-				Contacto nuevoContacto  = new Contacto(nuevoNombre, ipMensaje, puertoMensaje);
-				nuevoContacto.addMensaje(nombreMensaje,textoMensaje, false);
-				contactos.add(nuevoContacto);
-			}
-			EventoNuevoMensajeRecibido();	
-		}
-		
-	}
-	*/
 	
 	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
 		destinatario.addMensaje(nickName,texto, true);
 	}
-	
-	
-
-	/*@Override
-	public void Envia(Conversacion destinatario, String texto) throws IOException {
-		Socket clientSocket = new Socket();
-		clientSocket.connect(new InetSocketAddress(destinatario.getIp(), destinatario.getPuerto()), 1000); //1s de timeout
-		DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-		String mensaje = nickName + "`"+ ip + "`" + puerto +"`"+ texto;
-		out.writeUTF(mensaje);
-		clientSocket.close();
-		NuevoMensajeEnviado(destinatario, texto);
-
-	}*/
 	
 	public String getNickName() {
 		return nickName;
@@ -390,12 +360,5 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void agendarContacto(String nickname) {
 		agendarContacto(new Contacto(nickname));
 	}
-
-	
-
-
-
-
-	
 	
 }
