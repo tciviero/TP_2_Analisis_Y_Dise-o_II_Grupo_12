@@ -72,14 +72,14 @@ public class Directorio {
 	public void NotificarDesconexion(String nickname) {
 		this.estadoUsuarios.put(nickname, false);
 		
-		Servidor.getInstancia().ActualizaDirectoriosClientes();
+		//Servidor.getInstancia().ActualizaDirectoriosClientes(); ACTUALIZAR
 		ControladorServidor.getInstance().ActualizarVistas();
 	}
 
 	public void NotificarConexion(String nickname) {
 		this.estadoUsuarios.put(nickname, true);
 		
-		Servidor.getInstancia().ActualizaDirectoriosClientes();
+		//Servidor.getInstancia().ActualizaDirectoriosClientes(); ACTUALIZAR
 		ControladorServidor.getInstance().ActualizarVistas();
 	}
 }

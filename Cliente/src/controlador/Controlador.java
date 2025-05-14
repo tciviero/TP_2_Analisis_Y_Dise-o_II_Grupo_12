@@ -102,7 +102,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
 				Usuario.getInstancia().Conectar();
 			//}
-			Usuario.getInstancia().enviarRequestRegistro();
+			//Usuario.getInstancia().enviarRequestRegistro();
 		} catch (SocketTimeoutException e) {
 			System.out.println("No fue posible conectarse con el servidor");
 		}catch (IOException e) {

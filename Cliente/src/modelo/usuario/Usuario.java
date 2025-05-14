@@ -3,6 +3,7 @@ package modelo.usuario;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,6 +15,7 @@ import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
 import modelo.Contacto.Contacto;
+import monitor.Monitor;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
@@ -31,12 +33,16 @@ public class Usuario implements IFuncionalidadUsuario {
 	public boolean estaConectado = false;
 
 	private static final String IP_SERVIDOR = "192.168.1.45";
-	private final int PUERTO_SERVIDOR = 1234;
+	private Thread hiloEscucha;
+	private Socket socketActual;
+	/*private final int PUERTO_SERVIDOR = 1234;
 	private Socket socket;	//con el socket se comunica con el servidor
-	private ServerSocket serverSocket;
+	private ServerSocket serverSocket;*/
+	Monitor monitor;
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
+		this.monitor = Monitor.get_instance();
 	}
 	
 	public void AgregarSuscriptor(INotificable nuevoSuscriptor) {
@@ -81,21 +87,33 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	public void Conectar() throws IOException {
-		socket = new Socket();
-		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
-		new Thread(() -> {
-			EscucharMensajesServidor(socket);
-		}).start();
+		int puerto = this.monitor.cual_es_primario();
+		Socket socket = new Socket(IP_SERVIDOR, puerto);
+
+		// Enviar mensaje de registro por este mismo socket
+		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		String mensajeRegistro = "Registrar" + "`" + nickName;
+		out.writeUTF(mensajeRegistro);
+		out.flush();
+		System.out.println("Se envía al servidor: " + mensajeRegistro);
+
+		// Escuchar respuestas en otro hilo
+		new Thread(() -> EscucharMensajesServidor(socket)).start();
 	}
 	
 	public void iniciarSesion(String nickname) throws IOException {
 		this.Conectar();
+		Socket socket = new Socket();
+		socket.connect(new InetSocketAddress(ip, puerto), 1000);
+		//mandarle mensaje a servidor
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		String mensaje_servidor = "INICIAR`" + nickname;
 		out.writeUTF(mensaje_servidor);
 	}
 	
 	private void EscucharMensajesServidor(Socket socket){
+		this.socketActual = socket; // guarda el nuevo socket
+		this.hiloEscucha = Thread.currentThread(); // guarda el hilo actual
 		try {
 			System.out.println("Dentro de un hilo conectado al servidor... esperando");
 			//this.Conectado=true;
@@ -114,8 +132,7 @@ public class Usuario implements IFuncionalidadUsuario {
 						this.estaConectado = true;
 						EventoNotificacionRecibido(dataArray[2]);
 						VistaConectado();
-					}
-					else {
+					}else{
 						System.out.println("Error de registro:"+dataArray[2]);
 						EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
 					}
@@ -181,6 +198,28 @@ public class Usuario implements IFuncionalidadUsuario {
 			e.printStackTrace();
 		}
 	}
+	
+	public void cambiarConexion(String nuevaIP, int nuevoPuerto) throws IOException {
+		// Cerrar socket anterior
+		if (socketActual != null && !socketActual.isClosed()) {
+			try {
+				socketActual.close();
+			} catch (IOException e) {
+				System.err.println("Error al cerrar el socket viejo: " + e.getMessage());
+			}
+		}
+
+		// Abrir nuevo socket
+		Socket nuevoSocket = new Socket(nuevaIP, nuevoPuerto);
+		this.ip = nuevaIP;
+		this.puerto = nuevoPuerto;
+
+		// Lanzar nuevo hilo de escucha
+		new Thread(() -> {
+			EscucharMensajesServidor(nuevoSocket);
+		}).start();
+	}
+
 
 	/*public boolean isConectado() {
 		return Conectado;
@@ -193,18 +232,42 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 
 	public void enviarRequestRegistro() throws IOException {
+		int puerto = this.monitor.cual_es_primario();
+		Socket socket = new Socket(IP_SERVIDOR,puerto);
+		//socket.connect(new InetSocketAddress(ip, puerto), 1000);
 		if(!socket.isClosed()) {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "Registrar" + "`" + nickName;
 			out.writeUTF(mensajeRegistro);
+			out.flush();
 			System.out.println("Se envia al servidor:"+mensajeRegistro);
+			
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			String respuesta_servidor = in.readUTF();
+			System.out.println("RESPUESTA: " + respuesta_servidor);
+			in = new DataInputStream(socket.getInputStream());
+			String[] dataArray = respuesta_servidor.split("`");
+		
+			String respuesta = dataArray[0].toUpperCase();
+			if(respuesta.equalsIgnoreCase("RES-REGISTRO")) {
+				if(dataArray[1].equalsIgnoreCase("OK")) {
+					System.out.println("Usuario registrado exitosamente");
+					this.estaConectado = true;
+					EventoNotificacionRecibido(dataArray[2]);
+					VistaConectado();
+				}else{
+					System.out.println("Error de registro:"+dataArray[2]);
+					EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
+				}
+			}
 		}
 	}
 	
 	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, UsuarioNoRegistradoException {
 		Socket socket;
+		int puerto = this.monitor.cual_es_primario();
 		try {
-			socket = new Socket(IP_SERVIDOR, PUERTO_SERVIDOR);
+			socket = new Socket(IP_SERVIDOR, puerto);
 			if(!socket.isClosed()) {
 				try {
 					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -238,7 +301,9 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
+		int puerto = this.monitor.cual_es_primario();
 		try {
+			Socket socket = new Socket(IP_SERVIDOR, puerto);
 			if(!socket.isClosed()) {
 				DataOutputStream out;
 				out = new DataOutputStream(socket.getOutputStream());
