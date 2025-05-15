@@ -16,14 +16,18 @@ public class ControladorServidor{
 
 	private static ControladorServidor instance=null;
 	private VentanaServidor vista;
-	private String IP_Servidor = "192.168.1.45";
+	private String IP_servidor1 = "192.168.1.101";
+	private String IP_servidor2 = "192.168.1.102";
 	private static final int PUERTO_SERVIDOR_PRIMARIO = 1234;
 	private static final int PUERTO_SERVIDOR_SECUNDARIO = 1235;
 	private Servidor servidor1,servidor2;
+	private String IP_Monitor = "192.168.1.100";
+	private static final int PUERTO_MONITOR = 8888;
+	
 	
 	private ControladorServidor() {
-		this.servidor1 = new Servidor(PUERTO_SERVIDOR_PRIMARIO,PUERTO_SERVIDOR_SECUNDARIO);
-		this.servidor2 = new Servidor(PUERTO_SERVIDOR_SECUNDARIO,PUERTO_SERVIDOR_PRIMARIO);
+		this.servidor1 = new Servidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO,IP_Monitor,PUERTO_MONITOR);
+		this.servidor2 = new Servidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO,IP_Monitor,PUERTO_MONITOR);
 	}
 	
 	public static ControladorServidor getInstance() {
@@ -38,18 +42,19 @@ public class ControladorServidor{
 	}
 	
 	public void Iniciar() {
-		IP_Servidor = crearIP();
 		try {
-			this.servidor1.Iniciar();
-			vista = new VentanaServidor(IP_Servidor,PUERTO_SERVIDOR_PRIMARIO);
+			this.servidor1.iniciar();
+			vista = new VentanaServidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO);
 		} catch (PuertoYaUsadoException e) {
 			try {
-				this.servidor2.Iniciar();
-				vista = new VentanaServidor(IP_Servidor,PUERTO_SERVIDOR_SECUNDARIO);
+				this.servidor2.iniciar();
+				vista = new VentanaServidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO);
 			} catch (PuertoYaUsadoException e1) {
-				e1.printStackTrace();
+				System.out.println("ya estan los 2 abiertos");
 			}
 		}
+
+		
 	}
 	
 	public void ActualizarVistas() {

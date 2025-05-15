@@ -19,199 +19,93 @@ import controlador.ControladorServidor;
 import exception.PuertoYaUsadoException;
 
 public class Servidor {
-	private ServerSocket serverSocket;
+	//private ServerSocket serverSocket;
 	private static MensajesUsuario mensajesUsuario;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	private boolean esPrimario;
-	private String IP_Servidor = "192.168.1.45";
-	int puertoPropio,otroPuerto;
+	private String ipPropio;
+	private String IP_Monitor;
+	private final int puertoPING = 9999;
+	private int puertoPropio, puertoMonitor;
+	private boolean soyPrimario;
 	
-	public Servidor(int puertoPropio, int otroPuerto) {
+	public Servidor(String ipPropio,int puertoPropio, String ipMonitor,int puertoMonitor) {
 		SocketsDeUsuarios = new HashMap<String,Socket>();
 		mensajesUsuario = new MensajesUsuario();
+		this.ipPropio = ipPropio;
 		this.puertoPropio = puertoPropio;
-		this.otroPuerto = otroPuerto;
+		this.IP_Monitor = ipMonitor;
+		this.puertoMonitor = puertoMonitor;
+		this.soyPrimario = false;
 	}
-
-	/*public void Iniciar() throws PuertoYaUsadoException {
+	
+    public void iniciar() throws PuertoYaUsadoException {
 		try {
-	        serverSocket = new ServerSocket(puertoPropio);
-	    } catch (IOException e) {
-	        throw new PuertoYaUsadoException();
-	    }
+			InetAddress direccion = InetAddress.getByName(ipPropio);
+            ServerSocket serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
+            serverSocket.close();
+            informarAlMonitor();
+            iniciarEscuchaClientes();
+            if (soyPrimario) {
+            	System.out.println("SOY PRIMARIOOOOOOOOOOOOOOOOOOOOOOOOOO");
+                escucharPingsDelMonitor();
+            }
+		} catch (IOException e) {
+			throw new PuertoYaUsadoException();
+		}
+    }
 
-	    // Hilo para aceptar conexiones de clientes y heartbeats
-	    new Thread(() -> {
-	        System.out.println("Servidor escuchando conexiones en puerto " + puertoPropio);
-	        while (true) {
-	            try {
-	                Socket socket = serverSocket.accept();
-	                System.out.println("Nueva conexión desde " + socket.getInetAddress());
-	                new Thread(() -> manejarCliente(socket)).start();
-	            } catch (IOException e) {
-	                System.err.println("Error aceptando conexión: " + e.getMessage());
-	            }
-	        }
-	    }).start();
+    private void informarAlMonitor() {
+        try (Socket socket = new Socket(IP_Monitor, puertoMonitor)) {
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            out.writeUTF("servidor_conectado`"+this.ipPropio+"`"+puertoPropio);
 
-	    // Ahora que ya estamos escuchando, podemos verificar el rol
-	    try {
-	        Thread.sleep(500); // opcional: pequeña pausa para permitir al otro iniciar
-	    } catch (InterruptedException e) {
-	        Thread.currentThread().interrupt();
-	    }
-
-	    if (otroServidorActivo()) {
-	        esPrimario = false;
-	        System.out.println("Iniciando como SECUNDARIO");
-	        monitorearPrimario();
-	    } else {
-	        esPrimario = true;
-	        System.out.println("Iniciando como PRIMARIO");
-	        //enviarHeartbeats();
-	    }
-	}*/
-	
-	public void Iniciar() throws PuertoYaUsadoException {
-	    try {
-	        serverSocket = new ServerSocket(puertoPropio);  // Inicia el servidor en el puerto deseado
-	    } catch (IOException e) {
-	        throw new PuertoYaUsadoException();  // Lanza una excepción si el puerto ya está en uso
-	    }
-
-	    System.out.println("Servidor escuchando conexiones en puerto " + puertoPropio);
-
-	    // Bucle principal del servidor, que acepta y maneja conexiones secuencialmente
-	    while (true) {
-	        try {
-	            Socket socket = serverSocket.accept();  // Espera y acepta una conexión entrante
-	            System.out.println("Nueva conexión desde " + socket.getInetAddress());
-
-	            // Aquí manejas la conexión de forma secuencial, sin crear hilos
-	            manejarCliente(socket);  // Procesa la conexión en el mismo hilo
-
-	        } catch (IOException e) {
-	            System.err.println("Error aceptando conexión: " + e.getMessage());
-	            break;  // Si hay un error al aceptar, se sale del bucle
-	        }
-	    }
-	}
-	
-	 private boolean otroServidorActivo() {
-	        try (Socket socket = new Socket(IP_Servidor, otroPuerto)) {
-	        	DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-	        	out.writeUTF("PING");
-	            return true;
-	        } catch (IOException e) {
-	        	return false;
-	        }
-	 }
-	 
-	 /*private void enviarHeartbeats() {
-		    new Thread(() -> {
-		        while (esPrimario) {
-		            try (Socket socket = new Socket(IP_Servidor, otroPuerto);
-		                 DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-
-		                out.writeUTF("HEARTBEAT");
-
-		            } catch (IOException e) {
-		                System.err.println("No se pudo enviar el heartbeat al secundario: " + e.getMessage());
-		            }
-
-		            try {
-		                Thread.sleep(1000); // esperar 1 segundo antes de enviar el próximo
-		            } catch (InterruptedException e) {
-		                Thread.currentThread().interrupt(); // buena práctica
-		                break;
-		            }
-		        }
-		    }).start();
-	}*/
-	 
-	 private void monitorearPrimario() {
-	        new Thread(() -> {
-	            while (true) {
-	                boolean activo = otroServidorActivo();
-	                if (!activo) {
-	                    System.out.println("Primario inactivo. Asumiendo rol PRIMARIO.");
-	                    esPrimario = true;
-	                    //enviarHeartbeats();
-	                    break;
-	                }
-	                try {
-	                    Thread.sleep(2000);
-	                } catch (InterruptedException e) { }
-	            }
-	        }).start();
-	    }
-	
-	/*private void manejarCliente(Socket socket) {
-       
-		try (DataInputStream in = new DataInputStream(socket.getInputStream())) {
-	        String data = in.readUTF();
-	        System.out.println("Se recibió un mensaje de un cliente: " + data);
-	        String[] dataArray = data.split("`");
-
-	        String SOLICITUD = dataArray[0].toUpperCase();
-	        System.out.println("SOLICITUD RECIBIDA: " + SOLICITUD);
-	        
-	        String nombreUsuario = null;
-	
-                switch (SOLICITUD) {
-                    case "REGISTRAR":
-                    	nombreUsuario = dataArray[1];
-            			registrar(nombreUsuario,socket);
-                        break;
-                    case "COMPROBAR":
-                    	nombreUsuario = dataArray[1];
-                    	comprobarUsuarioSesion(nombreUsuario,socket);
-            			break;
-                    case "INICIAR":
-                    	nombreUsuario = dataArray[1];
-                    	iniciarSesion(nombreUsuario,socket);
-            			break;
-                    case "ENVIAR":
-                    	nombreUsuario = dataArray[1];
-            			String Mensaje = dataArray[2];
-            			String NicknameReceptor = dataArray[3];
-            			System.out.println("ENVIANDO MENSAJE SERVIDOR");
-            			enviarMensaje(nombreUsuario,Mensaje,NicknameReceptor);
-            			break;
-                    case "PING":
-                    	System.out.println("llega ping");
-                    	break;
-                    case "ES_PRIMARIO":
-                    	DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    	String respuesta;
-                    	if(esPrimario)
-                    		respuesta = "primario";
-                    	else
-                    		respuesta = "secundario";
-                    	out.writeUTF(respuesta);
-                    	break;
-            		default:
-            			System.out.println("Solicitud ("+SOLICITUD+") desconocida");
-            			break;
-                }
-                //Cada vez que se recibe algun mensaje de lo que sea
-                //Se actualiza la vista del servidor
-                ControladorServidor.getInstance().ActualizarVistas();
-            } catch (IOException e) { //se desconecta el usuario
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            String respuesta = in.readUTF();
+            System.out.println("El monitor respondió: " + respuesta);
+            soyPrimario = respuesta.equalsIgnoreCase("sos_primario");
+        } catch (IOException e) {
             e.printStackTrace();
-        	String nombre = Servidor.getNickname(socket);
-        	System.out.println("Cliente desconectado:"+nombre);
-        	
-            //Antes de avisar a todos que se desconecto, es necesario
-        	//Quitarlo del hashmap del servidor para que no tire error
-        	//Sale "Error al enviar al socket"
-        	if(nombre!=null) {
-        		SocketsDeUsuarios.remove(nombre);
-        		Directorio.getInstance().NotificarDesconexion(nombre);
-        	}
-           }
-       
-    }*/
+        }
+    }
+
+    private void escucharPingsDelMonitor() {
+        new Thread(() -> {
+            try{ // puerto reservado solo para pings
+            	InetAddress direccion = InetAddress.getByName(ipPropio);
+                ServerSocket serverPing = new ServerSocket();
+                serverPing.bind(new InetSocketAddress(direccion, puertoPING));
+            	while (true) {
+                    Socket socket = serverPing.accept();
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    String mensaje = in.readUTF();
+                    if (mensaje.equalsIgnoreCase("PING")) {
+                    	System.out.println("LLEGA PING");
+                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                        out.writeUTF("ECHO");
+                    }
+                    socket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+    
+    private void iniciarEscuchaClientes() {
+        new Thread(() -> {
+            try (ServerSocket serverSocket = new ServerSocket(puertoPropio)) {
+                System.out.println("Servidor escuchando clientes en puerto " + puertoPropio);
+                while (true) {
+                    Socket cliente = serverSocket.accept();
+                    new Thread(() -> manejarCliente(cliente)).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 	
 	private void manejarCliente(Socket socket) {
 	    DataInputStream in = null;
@@ -246,23 +140,15 @@ public class Servidor {
 	                System.out.println("ENVIANDO MENSAJE SERVIDOR");
 	                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
 	                break;
-	            case "PING":
-	                System.out.println("llega ping");
-	                break;
-	            case "ES_PRIMARIO":
+	            case "SOS_PRIMARIO":
 	                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-	                String respuesta;
-	                if (esPrimario)
-	                    respuesta = "primario";
-	                else
-	                    respuesta = "secundario";
-	                out.writeUTF(respuesta);
+	                escucharPingsDelMonitor();
+	                this.soyPrimario = true;
 	                break;
 	            default:
 	                System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
 	                break;
 	        }
-
 	        // Se actualiza la vista del servidor después de procesar la solicitud
 	        ControladorServidor.getInstance().ActualizarVistas();
 
