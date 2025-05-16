@@ -107,7 +107,7 @@ public class Usuario implements IFuncionalidadUsuario {
 
 	            System.out.println("Conectando a servidor en " + this.ip_servidor + " : " + this.puerto_servidor);
 	            this.socket = new Socket();
-	            socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+	            socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
 
 	            new Thread(() -> {
 	                EscucharMensajesServidor(socket);
@@ -253,7 +253,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		obtenerNuevoServidorDesdeMonitor();
 		this.socket = new Socket();
         try {
-			this.socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+			this.socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -284,7 +284,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
 		try {
 			Socket socket = new Socket();
-			socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+			socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
@@ -298,11 +298,11 @@ public class Usuario implements IFuncionalidadUsuario {
 		DataOutputStream out;
 		try {
 			Socket socket = new Socket();
-			socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+			socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
 			out = new DataOutputStream(socket.getOutputStream());
 			String mensaje = "DESCONEXION" + "`" + nickName;
 			out.writeUTF(mensaje);
-			System.out.println("XDD mensaje enviado: " + mensaje);
+			System.out.println("mensaje enviado: " + mensaje);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

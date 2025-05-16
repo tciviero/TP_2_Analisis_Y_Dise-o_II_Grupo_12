@@ -26,6 +26,14 @@ public class Directorio {
 		String nicknameNuevo = nuevo.getNickname();
 	    this.estadoUsuarios.put(nuevo.getNickname(),true); //lo agrego como conectado
 	}
+	
+	public void agregarUsuarioEstado(String nickname,String estado) {
+		if(estado.equalsIgnoreCase("online")) {
+			this.estadoUsuarios.put(nickname, true);
+		}else
+			this.estadoUsuarios.put(nickname,false);
+		
+	}
 
 	public ArrayList<String> getUsuarios() {
 		ArrayList<String> DirectorioParaVista = new ArrayList<String>();

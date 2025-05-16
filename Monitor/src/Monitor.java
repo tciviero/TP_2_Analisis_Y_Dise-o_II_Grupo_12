@@ -126,6 +126,11 @@ public class Monitor {
                     	this.puertoSecundario = Integer.parseInt(dataArray[2]);
                         System.out.println("Servidor designado como SECUNDARIO " + ip_secundario + " puerto: " + puertoSecundario);
                         out.writeUTF("sos_secundario");
+                        //mando a sincronizar al principal con el secundario recien conectado
+                        Socket socket_prin = new Socket(ip_primario, puertoPrimario);
+                        DataOutputStream out_prin = new DataOutputStream(socket_prin.getOutputStream());
+                        out_prin.writeUTF("SINCRONIZAR`"+ip_secundario+"`"+puertoSecundario);
+                        out_prin.flush();
                         //sincronizar
                         //le tengo que avisar al primario que sincronice con el secundario
                         //despues lo que pasa por el primario lo tiene que pasar al secundario

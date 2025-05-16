@@ -23,16 +23,23 @@ public class MensajesUsuario {
     	String aux = "";
     	int i = 0;
     	HashMap<String, List<String>> emisores = mensajes.get(receptor);
-        for (String emisor : emisores.keySet()) {
-            //System.out.println("  De " + emisor + ":");
-            for (String mensaje : emisores.get(emisor)) {
-                i++;
-            	System.out.println("mensaje de: " + emisor + " : " + mensaje);
-                aux += "`" + emisor + "`" + mensaje;
+        if(emisores!=null) {
+        	for (String emisor : emisores.keySet()) {
+                //System.out.println("  De " + emisor + ":");
+                for (String mensaje : emisores.get(emisor)) {
+                    i++;
+                	System.out.println("mensaje de: " + emisor + " : " + mensaje);
+                    aux += "`" + emisor + "`" + mensaje;
+                }
             }
-        }
-        respuesta += "`" + i + aux;
+        	respuesta += "`" + i + aux;
+        }else
+        	respuesta = "no_tuvo";
         return respuesta;
+    }
+    
+    public void eliminarMensajesYaLeidos(String nickname) {
+    	mensajes.remove(nickname);
     }
     
     public void mostrarMensajes() {

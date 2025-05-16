@@ -18,6 +18,7 @@ import java.util.Map;
 
 import controlador.ControladorServidor;
 import exception.PuertoYaUsadoException;
+import modelo.usuario.UsuarioYEstado;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
@@ -97,8 +98,12 @@ public class Servidor {
     
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(puertoPropio)) { //aca tengo que cambiar la ip
-                System.out.println("Servidor escuchando clientes en puerto " + puertoPropio);
+            try{
+            	InetAddress direccion = InetAddress.getByName(ipPropio);
+                ServerSocket serverSocket = new ServerSocket();
+                serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
+                
+                System.out.println("Servidor escuchando clientes en " + ipPropio + " " + puertoPropio);
                 while (true) {
                     Socket cliente = serverSocket.accept();
                     new Thread(() -> manejarCliente(cliente)).start();
@@ -150,6 +155,7 @@ public class Servidor {
 	            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
 	            	String ip_secundario = dataArray[1];
 	            	int puerto_secundario = Integer.parseInt(dataArray[2]);
+	            	System.out.println("sincronizar con: " + ip_secundario + " " + puerto_secundario);
 	            	sincronizar(ip_secundario,puerto_secundario);
 	            	break;
 	            case "DESCONEXION":
@@ -161,6 +167,19 @@ public class Servidor {
 	    	            this.directorio.NotificarDesconexion(nickname);
 	    	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 	    	        }
+	            	break;
+	            case "DIRECTORIO":
+	            	//Llega la lista de contactos, que son solo strings con los nicknames
+					int cantidadContactos = Integer.parseInt(dataArray[1]);
+					this.directorio = new Directorio();
+					for (int i = 2; i < dataArray.length; i++) {
+						String nombre = dataArray[i];
+						i++;
+						String estado = dataArray[i];
+						System.out.println("usuario: " + nombre + " " + estado);
+						this.directorio.agregarUsuarioEstado(nombre, estado);
+					}
+					ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 	            	break;
 	            default:
 	                System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
@@ -186,11 +205,14 @@ public class Servidor {
 	private void sincronizar(String ip_secundario, int puerto_secundario) {
 		Socket socket;
 		try {
-			socket = new Socket(ip_secundario, puerto_secundario);
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			//ServerSocket serverSocket = new ServerSocket(puerto_secundario);
+			//socket = new Socket(ip_secundario, puerto_secundario); va este en realidad
+			Socket socket_secundario = new Socket(ip_secundario, puerto_secundario);
+			DataOutputStream out_secundario = new DataOutputStream(socket_secundario.getOutputStream());
+			//out.writeUTF("servidor_conectado`"+this.ipPropio+"`"+puertoPropio);
 			//mandar todo el directorio
 			String todo_el_directorio = this.directorio.getDirectorioFormateado();
-			out.writeUTF(todo_el_directorio); //tiene que saber recibir el otro servidor
+			out_secundario.writeUTF(todo_el_directorio); //tiene que saber recibir el otro servidor
 			//mandar todos los mensajes
 			
 			//out.writeUTF("servidor_conectado`"+ip_secundario+"`"+puerto_secundario);
@@ -262,9 +284,13 @@ public class Servidor {
 		
 		mensajesUsuario.mostrarMensajes(); //aca hay que agarrar los mensajes de nickname y mandarselos para que cargue la vista
 		
-		mensaje_enviar += "`" + mensajesUsuario.historial_mensajes_recibidos(nickname);
-		
-		out.writeUTF(mensaje_enviar);
+		String mensaje = mensajesUsuario.historial_mensajes_recibidos(nickname);
+		//lo tengo que sacar del historial
+		mensajesUsuario.eliminarMensajesYaLeidos(nickname);
+		if(!mensaje.equalsIgnoreCase("no_tuvo")) {
+			mensaje_enviar += "`" + mensaje;
+			out.writeUTF(mensaje_enviar);
+		}
 	}
 
 	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {
