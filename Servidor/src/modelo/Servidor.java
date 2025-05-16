@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,14 +21,14 @@ import exception.PuertoYaUsadoException;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
-	private static MensajesUsuario mensajesUsuario;
+	private MensajesUsuario mensajesUsuario;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
-	private boolean esPrimario;
 	private String ipPropio;
 	private String IP_Monitor;
 	private final int puertoPING = 9999;
 	private int puertoPropio, puertoMonitor;
 	private boolean soyPrimario;
+	private Directorio directorio;
 	
 	public Servidor(String ipPropio,int puertoPropio, String ipMonitor,int puertoMonitor) {
 		SocketsDeUsuarios = new HashMap<String,Socket>();
@@ -37,6 +38,7 @@ public class Servidor {
 		this.IP_Monitor = ipMonitor;
 		this.puertoMonitor = puertoMonitor;
 		this.soyPrimario = false;
+		this.directorio = new Directorio();
 	}
 	
     public void iniciar() throws PuertoYaUsadoException {
@@ -48,7 +50,7 @@ public class Servidor {
             informarAlMonitor();
             iniciarEscuchaClientes();
             if (soyPrimario) {
-            	System.out.println("SOY PRIMARIOOOOOOOOOOOOOOOOOOOOOOOOOO");
+            	System.out.println("pasa a ser primario");
                 escucharPingsDelMonitor();
             }
 		} catch (IOException e) {
@@ -95,7 +97,7 @@ public class Servidor {
     
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(puertoPropio)) {
+            try (ServerSocket serverSocket = new ServerSocket(puertoPropio)) { //aca tengo que cambiar la ip
                 System.out.println("Servidor escuchando clientes en puerto " + puertoPropio);
                 while (true) {
                     Socket cliente = serverSocket.accept();
@@ -145,41 +147,64 @@ public class Servidor {
 	                escucharPingsDelMonitor();
 	                this.soyPrimario = true;
 	                break;
+	            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
+	            	String ip_secundario = dataArray[1];
+	            	int puerto_secundario = Integer.parseInt(dataArray[2]);
+	            	sincronizar(ip_secundario,puerto_secundario);
+	            	break;
+	            case "DESCONEXION":
+	            	String nickname = dataArray[1];
+	            	System.out.println("Cliente desconectado: " + nickname);
+	    	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
+	    	        if (nickname != null) {
+	    	            SocketsDeUsuarios.remove(nickname);
+	    	            this.directorio.NotificarDesconexion(nickname);
+	    	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+	    	        }
+	            	break;
 	            default:
 	                System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
 	                break;
 	        }
 	        // Se actualiza la vista del servidor después de procesar la solicitud
-	        ControladorServidor.getInstance().ActualizarVistas();
+	        ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 
 	    } catch (IOException e) {
 	        e.printStackTrace();
-	        String nombre = Servidor.getNickname(socket);
+	        /*String nombre = Servidor.getNickname(socket);
 	        System.out.println("Cliente desconectado: " + nombre);
 	        
 	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
 	        if (nombre != null) {
 	            SocketsDeUsuarios.remove(nombre);
-	            Directorio.getInstance().NotificarDesconexion(nombre);
-	        }
-	    } finally {
-	        // Aquí puedes manejar el cierre de los recursos si es necesario
-	        try {
-	            if (in != null) {
-	                in.close();
-	            }
-	            // socket.close(); // Solo cerrar el socket si realmente lo deseas
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
+	            this.directorio.NotificarDesconexion(nombre);
+	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+	        }*/
 	    }
+	}
+	
+	private void sincronizar(String ip_secundario, int puerto_secundario) {
+		Socket socket;
+		try {
+			socket = new Socket(ip_secundario, puerto_secundario);
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			//mandar todo el directorio
+			String todo_el_directorio = this.directorio.getDirectorioFormateado();
+			out.writeUTF(todo_el_directorio); //tiene que saber recibir el otro servidor
+			//mandar todos los mensajes
+			
+			//out.writeUTF("servidor_conectado`"+ip_secundario+"`"+puerto_secundario);
+			
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
 		Socket socket_receptor = getSocket(nick_receptor);
 				
-		if(Directorio.getInstance().usuarioEstaConectado(nick_receptor)) { //si esta conectado lo envia
+		if(this.directorio.usuarioEstaConectado(nick_receptor)) { //si esta conectado lo envia
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
 			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje;
 			System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje_enviar);
@@ -196,14 +221,14 @@ public class Servidor {
 	private void registrar(String nickname,Socket socket) throws IOException {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		String mensaje_enviar = "RES-REGISTRO"+ "`";
-		if(!Directorio.getInstance().contieneUsuario(nickname)) { //nickname no esta registrado
+		if(!this.directorio.contieneUsuario(nickname)) { //nickname no esta registrado
 			System.out.println("registro de usuario: " + nickname);
 			mensaje_enviar +=  "OK"+"`"+"Registro exitoso";
 			//Hay un nuevo usuario y se deberia actualizar el directorio
 			//tanto del servidor como de todos los clientes
 			Servidor.SocketsDeUsuarios.put(nickname,socket);
 			//Se agrega al hashmap<nickname,socket> de esta clase
-			Directorio.getInstance().agregarUsuario(new Usuario(nickname));
+			this.directorio.agregarUsuario(new Usuario(nickname));
 			ActualizaDirectoriosClientes();
 			System.out.println("mensaje enviado: " + mensaje_enviar);
 		}
@@ -219,7 +244,7 @@ public class Servidor {
 		for (Socket socket : SocketsDeUsuarios.values()) {
 		    try {
 		        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		        out.writeUTF(Directorio.getInstance().getDirectorioFormateado());
+		        out.writeUTF(this.directorio.getDirectorioFormateado());
 		        out.flush(); 
 		    } catch (IOException e) {
 		        System.out.println("Error al enviar al socket: " + e.getMessage());
@@ -230,7 +255,8 @@ public class Servidor {
 	private void iniciarSesion(String nickname, Socket socket) throws IOException {
 		String mensaje_enviar = "RES-INICIO`OK`Inicio exitoso";
 		SocketsDeUsuarios.put(nickname, socket);
-		Directorio.getInstance().NotificarConexion(nickname);
+		this.directorio.NotificarConexion(nickname);
+		ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion" + nickname);
 		
@@ -244,13 +270,14 @@ public class Servidor {
 	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		String mensaje_enviar;
-		if(Directorio.getInstance().contieneUsuario(nickname)) { //si primero se registro ok, si no error de que el nickname no se registro
-			if(Directorio.getInstance().usuarioEstaConectado(nickname)) { //si esta conectado error ! no puede iniciar sesion 
+		if(this.directorio.contieneUsuario(nickname)) { //si primero se registro ok, si no error de que el nickname no se registro
+			if(this.directorio.usuarioEstaConectado(nickname)) { //si esta conectado error ! no puede iniciar sesion 
 				mensaje_enviar = "YA_INICIADO";
 			}else { //inicio sesion
 				System.out.println("ESTA TODO OK EN COMPROBAR USUARIO");
 				SocketsDeUsuarios.put(nickname, socket);
-				Directorio.getInstance().NotificarConexion(nickname);
+				this.directorio.NotificarConexion(nickname);
+				ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 				mensaje_enviar = "INICIO_OK";
 			}
 		}else {

@@ -9,24 +9,15 @@ import controlador.ControladorServidor;
 
 public class Directorio {
 	private HashMap<String,Boolean> estadoUsuarios; //nickname y true (conectado) / false (desconectado)
-
-	private static Directorio instance =null;
 	
-	private Directorio() {
+	public Directorio() {
 		this.estadoUsuarios = new HashMap<String,Boolean>();
 	}
 	
 	public boolean usuarioEstaConectado(String nickname) { //devuelve si esta conectado el usuario
 		return this.estadoUsuarios.get(nickname);
 	}
-	
-	public static Directorio getInstance() {
-		if(instance==null) {
-			instance = new Directorio();
-		}
-		return instance;
-	}
-	
+
 	public boolean contieneUsuario(String nickname) {
 	    return this.estadoUsuarios.containsKey(nickname);
 	}
@@ -73,13 +64,13 @@ public class Directorio {
 		this.estadoUsuarios.put(nickname, false);
 		
 		//Servidor.getInstancia().ActualizaDirectoriosClientes(); ACTUALIZAR
-		ControladorServidor.getInstance().ActualizarVistas();
+		//ControladorServidor.getInstance().ActualizarVistas();
 	}
 
 	public void NotificarConexion(String nickname) {
 		this.estadoUsuarios.put(nickname, true);
 		
 		//Servidor.getInstancia().ActualizaDirectoriosClientes(); ACTUALIZAR
-		ControladorServidor.getInstance().ActualizarVistas();
+		//ControladorServidor.getInstance().ActualizarVistas();
 	}
 }

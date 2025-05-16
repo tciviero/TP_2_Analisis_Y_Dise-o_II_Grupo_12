@@ -3,7 +3,6 @@ package modelo.usuario;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,12 +14,13 @@ import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
 import modelo.Contacto.Contacto;
-import monitor.Monitor;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
 	private static Usuario instancia = null;
 
+	private final String ip_monitor = "192.168.1.100";
+	private final int puerto_monitor = 8888;
 	private int puerto;
 	private String nickName,ip;
 
@@ -32,17 +32,13 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public boolean estaConectado = false;
 
-	private static final String IP_SERVIDOR = "192.168.1.45";
-	private Thread hiloEscucha;
-	private Socket socketActual;
-	/*private final int PUERTO_SERVIDOR = 1234;
+	private String ip_servidor;
+	private int puerto_servidor;
 	private Socket socket;	//con el socket se comunica con el servidor
-	private ServerSocket serverSocket;*/
-	Monitor monitor;
+	//private ServerSocket serverSocket;
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
-		this.monitor = Monitor.get_instance();
 	}
 	
 	public void AgregarSuscriptor(INotificable nuevoSuscriptor) {
@@ -86,34 +82,70 @@ public class Usuario implements IFuncionalidadUsuario {
 		this.directorio = new ArrayList<UsuarioYEstado>();
 	}
 	
-	public void Conectar() throws IOException {
-		int puerto = this.monitor.cual_es_primario();
-		Socket socket = new Socket(IP_SERVIDOR, puerto);
-
-		// Enviar mensaje de registro por este mismo socket
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		String mensajeRegistro = "Registrar" + "`" + nickName;
-		out.writeUTF(mensajeRegistro);
-		out.flush();
-		System.out.println("Se envía al servidor: " + mensajeRegistro);
-
-		// Escuchar respuestas en otro hilo
-		new Thread(() -> EscucharMensajesServidor(socket)).start();
-	}
-	
 	public void iniciarSesion(String nickname) throws IOException {
 		this.Conectar();
-		Socket socket = new Socket();
-		socket.connect(new InetSocketAddress(ip, puerto), 1000);
-		//mandarle mensaje a servidor
+        //this.socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		String mensaje_servidor = "INICIAR`" + nickname;
 		out.writeUTF(mensaje_servidor);
 	}
 	
+	/*public void Conectar() throws IOException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
+		new Thread(() -> {
+			EscucharMensajesServidor(socket);
+		}).start();
+	}*/
+	
+	
+	public void Conectar() {
+	    while (true) {
+	        try {
+	            // Obtener nueva IP y puerto del monitor
+	            obtenerNuevoServidorDesdeMonitor(); 
+
+	            System.out.println("Conectando a servidor en " + this.ip_servidor + " : " + this.puerto_servidor);
+	            this.socket = new Socket();
+	            socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+
+	            new Thread(() -> {
+	                EscucharMensajesServidor(socket);
+	            }).start();
+
+	            break; // si todo salió bien, salgo del bucle
+	        } catch (IOException e) {
+	            System.err.println("Fallo la conexión al servidor, reintentando en 3 segundos...");
+	            try {
+	                Thread.sleep(3000);
+	            } catch (InterruptedException ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+	    }
+	}
+	
+	private void obtenerNuevoServidorDesdeMonitor() {
+        try {
+        	Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(this.ip_monitor, this.puerto_monitor), 1000);
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "CUAL_PRIMARIO";
+			out.writeUTF(mensajeRegistro);
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			String data = in.readUTF();
+			System.out.println("El servidor nos envio este mensaje: "+data);
+			String[] dataArray = data.split("`");
+			this.ip_servidor = dataArray[0];
+			this.puerto_servidor = Integer.parseInt(dataArray[1]);
+			
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	private void EscucharMensajesServidor(Socket socket){
-		this.socketActual = socket; // guarda el nuevo socket
-		this.hiloEscucha = Thread.currentThread(); // guarda el hilo actual
 		try {
 			System.out.println("Dentro de un hilo conectado al servidor... esperando");
 			//this.Conectado=true;
@@ -132,7 +164,8 @@ public class Usuario implements IFuncionalidadUsuario {
 						this.estaConectado = true;
 						EventoNotificacionRecibido(dataArray[2]);
 						VistaConectado();
-					}else{
+					}
+					else {
 						System.out.println("Error de registro:"+dataArray[2]);
 						EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
 					}
@@ -193,33 +226,10 @@ public class Usuario implements IFuncionalidadUsuario {
 				}
 			}
 		} catch (IOException e) {
-			//this.Conectado=false;
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
-	public void cambiarConexion(String nuevaIP, int nuevoPuerto) throws IOException {
-		// Cerrar socket anterior
-		if (socketActual != null && !socketActual.isClosed()) {
-			try {
-				socketActual.close();
-			} catch (IOException e) {
-				System.err.println("Error al cerrar el socket viejo: " + e.getMessage());
-			}
-		}
-
-		// Abrir nuevo socket
-		Socket nuevoSocket = new Socket(nuevaIP, nuevoPuerto);
-		this.ip = nuevaIP;
-		this.puerto = nuevoPuerto;
-
-		// Lanzar nuevo hilo de escucha
-		new Thread(() -> {
-			EscucharMensajesServidor(nuevoSocket);
-		}).start();
-	}
-
 
 	/*public boolean isConectado() {
 		return Conectado;
@@ -232,89 +242,73 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 
 	public void enviarRequestRegistro() throws IOException {
-		int puerto = this.monitor.cual_es_primario();
-		Socket socket = new Socket(IP_SERVIDOR,puerto);
-		//socket.connect(new InetSocketAddress(ip, puerto), 1000);
-		if(!socket.isClosed()) {
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			String mensajeRegistro = "Registrar" + "`" + nickName;
-			out.writeUTF(mensajeRegistro);
-			out.flush();
-			System.out.println("Se envia al servidor:"+mensajeRegistro);
-			
-			DataInputStream in = new DataInputStream(socket.getInputStream());
-			String respuesta_servidor = in.readUTF();
-			System.out.println("RESPUESTA: " + respuesta_servidor);
-			in = new DataInputStream(socket.getInputStream());
-			String[] dataArray = respuesta_servidor.split("`");
-		
-			String respuesta = dataArray[0].toUpperCase();
-			if(respuesta.equalsIgnoreCase("RES-REGISTRO")) {
-				if(dataArray[1].equalsIgnoreCase("OK")) {
-					System.out.println("Usuario registrado exitosamente");
-					this.estaConectado = true;
-					EventoNotificacionRecibido(dataArray[2]);
-					VistaConectado();
-				}else{
-					System.out.println("Error de registro:"+dataArray[2]);
-					EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
-				}
-			}
-		}
+        //socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+		DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+		String mensajeRegistro = "Registrar" + "`" + nickName;
+		out.writeUTF(mensajeRegistro);
+		System.out.println("Se envia al servidor:"+mensajeRegistro);
 	}
 	
 	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, UsuarioNoRegistradoException {
-		Socket socket;
-		int puerto = this.monitor.cual_es_primario();
-		try {
-			socket = new Socket(IP_SERVIDOR, puerto);
-			if(!socket.isClosed()) {
-				try {
-					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-					String mensajeRegistro = "COMPROBAR`" + nickname;
-					out.writeUTF(mensajeRegistro);
-					DataInputStream in = new DataInputStream(socket.getInputStream());
-					String respuesta_servidor = in.readUTF();
-					System.out.println("RESPUESTA: " + respuesta_servidor);
-					if(respuesta_servidor.equalsIgnoreCase("INICIO_OK")) { //se pudo iniciar sesion
-						respuesta_servidor = in.readUTF();
-						System.out.println("RESPUESTA: " + respuesta_servidor);
-						System.out.println("inicio de sesion OK"); //esta todo ok
-					}else if(respuesta_servidor.equalsIgnoreCase("YA_INICIADO")){
-						throw new UsuarioConSesionActivaException(nickname);
-					} else if(respuesta_servidor.equalsIgnoreCase("NO_REGISTRADO")) { //no fue registrado el usuario
-						throw new UsuarioNoRegistradoException(nickname);
-					}
-						
-				} catch (IOException e) { //server desconectado
-					//Se debe crear una notificacion
-					e.printStackTrace();
-				}
-			}
-		} catch (UnknownHostException e) {
+		obtenerNuevoServidorDesdeMonitor();
+		this.socket = new Socket();
+        try {
+			this.socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		try {
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "COMPROBAR`" + nickname;
+			out.writeUTF(mensajeRegistro);
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			String respuesta_servidor = in.readUTF();
+			System.out.println("RESPUESTA: " + respuesta_servidor);
+			if(respuesta_servidor.equalsIgnoreCase("INICIO_OK")) { //se pudo iniciar sesion
+				//respuesta_servidor = in.readUTF();
+				System.out.println("RESPUESTA: " + respuesta_servidor);
+				System.out.println("inicio de sesion OK"); //esta todo ok
+			}else if(respuesta_servidor.equalsIgnoreCase("YA_INICIADO")){
+					throw new UsuarioConSesionActivaException(nickname);
+				} else if(respuesta_servidor.equalsIgnoreCase("NO_REGISTRADO")) { //no fue registrado el usuario
+					throw new UsuarioNoRegistradoException(nickname);
+				}
+					
+			} catch (IOException e) { //server desconectado
+				//Se debe crear una notificacion
+				e.printStackTrace();
+			}		
+	}
+	
+	public void enviarRequestMensaje(String mensaje, String destinatario) {
+		try {
+			Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
+			out.writeUTF(mensajeRegistro);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public void enviarRequestMensaje(String mensaje, String destinatario) {
-		int puerto = this.monitor.cual_es_primario();
+	public void notificarDesconectado() {
+		DataOutputStream out;
 		try {
-			Socket socket = new Socket(IP_SERVIDOR, puerto);
-			if(!socket.isClosed()) {
-				DataOutputStream out;
-				out = new DataOutputStream(socket.getOutputStream());
-				String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
-				out.writeUTF(mensajeRegistro);
-			}
+			Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+			out = new DataOutputStream(socket.getOutputStream());
+			String mensaje = "DESCONEXION" + "`" + nickName;
+			out.writeUTF(mensaje);
+			System.out.println("XDD mensaje enviado: " + mensaje);
 		} catch (IOException e) {
-			
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
 	public boolean getEstaConectado() {
 		return this.estaConectado;
 	}

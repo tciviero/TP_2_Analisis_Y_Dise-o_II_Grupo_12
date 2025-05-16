@@ -13,8 +13,7 @@ public class Monitor {
 	private String IP_Monitor = "192.168.1.100";
 	private static final int PUERTO_MONITOR = 8888;
     private String ip_primario,ip_secundario;
-    private int puertoPrimario, puertoSecundario, puertoPings;
-    private boolean primarioActivo = true;
+    private int puertoPrimario, puertoSecundario;
 	
 	private Monitor() {
 		this.puertoPrimario = 0;
@@ -34,7 +33,7 @@ public class Monitor {
 
     private void monitorearPrimario() {
         while (true) {
-            try (Socket socket = new Socket(ip_primario, 9999)) {
+            try (Socket socket = new Socket(ip_primario, 9999)) { //puerto para ping/echo
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 out.writeUTF("PING");
                 out.flush();
@@ -43,7 +42,6 @@ public class Monitor {
                 String respuesta = in.readUTF();
                 if (respuesta.equalsIgnoreCase("ECHO")) {
                     System.out.println("Primario activo.");
-                    primarioActivo = true;
                 }
             } catch (IOException e) {
                 //e.printStackTrace();
@@ -51,7 +49,6 @@ public class Monitor {
                 this.puertoPrimario = 0;
             	if(this.puertoSecundario!=0) {
                 	promoverSecundario();
-                    primarioActivo = false;
                 }else {
                 	System.out.println("no hay ningun secundario para promover");
                 	break;
@@ -104,11 +101,13 @@ public class Monitor {
 			String[] dataArray = data.split("`");
 			
 			String comando = dataArray[0].toUpperCase();
-            /*if (comando.equalsIgnoreCase("CUAL_PRIMARIO")) {
-                int puerto = primarioActivo ? puertoPrimario : puertoSecundario;
-                out.writeUTF("PRIMARIO`" + puerto);
-            }*/
-            if (comando.equalsIgnoreCase("servidor_conectado")) {
+            if (comando.equalsIgnoreCase("CUAL_PRIMARIO")) {
+               if(this.puertoPrimario!=0) {
+            	   out.writeUTF(ip_primario + "`" + puertoPrimario);
+               }else {
+            	   out.writeUTF("PRIMARIO`NO_HAY");
+               }
+            }else if (comando.equalsIgnoreCase("servidor_conectado")) {
                 synchronized (this) {
                     if (puertoPrimario == 0) {
                         this.ip_primario = dataArray[1];
@@ -127,6 +126,10 @@ public class Monitor {
                     	this.puertoSecundario = Integer.parseInt(dataArray[2]);
                         System.out.println("Servidor designado como SECUNDARIO " + ip_secundario + " puerto: " + puertoSecundario);
                         out.writeUTF("sos_secundario");
+                        //sincronizar
+                        //le tengo que avisar al primario que sincronice con el secundario
+                        //despues lo que pasa por el primario lo tiene que pasar al secundario
+                        
                     } else {
                         out.writeUTF("ya_hay_dos_servidores");
                     }

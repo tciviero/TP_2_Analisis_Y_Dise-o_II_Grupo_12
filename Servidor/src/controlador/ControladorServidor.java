@@ -4,6 +4,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import exception.PuertoYaUsadoException;
@@ -57,10 +58,8 @@ public class ControladorServidor{
 		
 	}
 	
-	public void ActualizarVistas() {
-		String[] usuarios=null;
-//		usuarios = Directorio.getInstance().getUsuarios();
-		this.vista.ActualizarDirectorio(Directorio.getInstance().getUsuarios());
+	public void ActualizarVistas(ArrayList<String> usuarios) {
+		this.vista.ActualizarDirectorio(usuarios);
 	}
 	
 	public String crearIP() {

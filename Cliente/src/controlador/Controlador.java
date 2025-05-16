@@ -32,11 +32,18 @@ import vista.VentanaChat;
 public class Controlador implements ActionListener, ListSelectionListener{
 	IFuncionalidadUsuario usuario = Usuario.getInstancia();
 	private IVista vista;
+	private static Controlador instance = null;
 	
 	private String IP_Usuario = null;
 	
-	public Controlador() {
+	private Controlador() {
 		
+	}
+	
+	public static Controlador getInstance() {
+		if(instance == null)
+			instance = new Controlador();
+		return instance;
 	}
 
 	public void Iniciar() {
@@ -47,15 +54,19 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		Usuario.getInstancia().AgregarSuscriptor(vista);
 	}
 	
+	public void notificarDesconectado() {
+		Usuario.getInstancia().notificarDesconectado();
+	}
+	
 	
 	public IVista getVista(){
 		return this.vista;
 	}
 	
-	private void DireccionYPuertoEnUso(String ip,int puerto) throws BindException,IllegalArgumentException, IOException {
+	/*private void DireccionYPuertoEnUso(String ip,int puerto) throws BindException,IllegalArgumentException, IOException {
         ServerSocket socket = new ServerSocket(puerto);
 		socket.close();
-	}
+	}*/
 	
 	public void UsuarioExistente(String ip, int puerto) throws IOException {
 		try(Socket socket = new Socket()){
@@ -96,18 +107,17 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	private void registrar() {
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
-		
-		try {
+
 			//if(!Usuario.getInstancia().isConectado()) {
 				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
 				Usuario.getInstancia().Conectar();
 			//}
-			//Usuario.getInstancia().enviarRequestRegistro();
-		} catch (SocketTimeoutException e) {
-			System.out.println("No fue posible conectarse con el servidor");
-		}catch (IOException e) {
-			e.printStackTrace();
-		}
+			try {
+				Usuario.getInstancia().enviarRequestRegistro();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
 	}
 
 	private void comprobarInicioSesion() {

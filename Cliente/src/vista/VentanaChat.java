@@ -5,6 +5,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionListener;
 
+import controlador.Controlador;
 import modelo.Conversacion;
 import modelo.Contacto.Contacto;
 import modelo.usuario.Usuario;
@@ -23,6 +24,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import javax.swing.JList;
@@ -332,6 +335,19 @@ public class VentanaChat extends JFrame implements IVista  {
 		panel_Directorio.add(btnAgendar);
 
 		this.setVisible(true);
+		
+		this.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent e) {
+		    	try {
+		            Controlador.getInstance().notificarDesconectado();
+		        } catch (Exception ex) {
+		            ex.printStackTrace();
+		        }
+		        System.exit(0);
+		    }
+		});
+
 	}
 
 
