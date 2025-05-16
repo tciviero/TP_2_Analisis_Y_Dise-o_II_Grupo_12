@@ -47,10 +47,10 @@ public class ControladorServidor{
 		leeArchTemp();	//Lee archivo temporal monitor.properties
 		//Y carga los valores ip_monitor y puerto_monitor
 		
-		FALTA comunicarse con el monitor para que nos de ip puerto y rol=primario o secundario.
+		//FALTA comunicarse con el monitor para que nos de ip puerto y rol=primario o secundario.
 		
-		FALTA tambien toda la parte de sincronizacion, el primario le deberiar pasar
-		a los servidores secundarios todas las solicitudes que recibe.
+		//FALTA tambien toda la parte de sincronizacion, el primario le deberiar pasar
+		//a los servidores secundarios todas las solicitudes que recibe.
 		
 		IP_Servidor = crearIP();
 		Puerto_Servidor = 1234;
