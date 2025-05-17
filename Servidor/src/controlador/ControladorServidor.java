@@ -4,6 +4,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -27,8 +28,16 @@ public class ControladorServidor{
 	
 	
 	private ControladorServidor() {
-		this.servidor1 = new Servidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO,IP_Monitor,PUERTO_MONITOR);
-		this.servidor2 = new Servidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO,IP_Monitor,PUERTO_MONITOR);
+		try {
+			InetAddress local = InetAddress.getLocalHost();
+			IP_servidor1 = local.getHostAddress();
+			IP_servidor2 = local.getHostAddress();
+			this.servidor1 = new Servidor(local.getHostAddress(),PUERTO_SERVIDOR_PRIMARIO,local.getHostAddress(),PUERTO_MONITOR);
+			this.servidor2 = new Servidor(local.getHostAddress(),PUERTO_SERVIDOR_SECUNDARIO,local.getHostAddress(),PUERTO_MONITOR);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public static ControladorServidor getInstance() {

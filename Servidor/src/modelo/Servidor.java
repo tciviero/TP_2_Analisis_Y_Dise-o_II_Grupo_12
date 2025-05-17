@@ -69,9 +69,8 @@ public class Servidor {
     public void iniciar() throws PuertoYaUsadoException {
 		System.out.println("INICIAR en SERVIDOR primario["+soyPrimario+"]");
 		try {
-			InetAddress direccion = InetAddress.getByName(ipPropio);
             ServerSocket serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
+            serverSocket.bind(new InetSocketAddress(ipPropio, puertoPropio));
             serverSocket.close();
             informarAlMonitor();
             iniciarEscuchaClientes();	//escucha en puerto propio
@@ -95,6 +94,7 @@ public class Servidor {
             System.out.println("El monitor respondió: " + respuesta);
             soyPrimario = respuesta.equalsIgnoreCase("sos_primario");
         } catch (IOException e) {
+        	System.out.println("hola");
             e.printStackTrace();
         }
     }
@@ -126,9 +126,8 @@ public class Servidor {
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
             try{
-            	InetAddress direccion = InetAddress.getByName(ipPropio);
                 ServerSocket serverSocket = new ServerSocket();
-                serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
+                serverSocket.bind(new InetSocketAddress(ipPropio, puertoPropio));
                 
                 System.out.println("Servidor escuchando en " + ipPropio + " " + puertoPropio);
                 while (true) {
