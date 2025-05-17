@@ -2,7 +2,8 @@ package src;
 
 public class MainMonitor {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
+		
 		try {
 			Monitor monitor = Monitor.get_instance();
 			monitor.iniciar();
