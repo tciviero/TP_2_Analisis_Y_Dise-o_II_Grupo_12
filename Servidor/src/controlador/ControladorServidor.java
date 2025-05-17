@@ -19,8 +19,8 @@ public class ControladorServidor{
 	private VentanaServidor vista;
 	private String IP_servidor1 = "192.168.1.101";
 	private String IP_servidor2 = "192.168.1.102";
-	private static final int PUERTO_SERVIDOR_PRIMARIO = 1234;
-	private static final int PUERTO_SERVIDOR_SECUNDARIO = 1235;
+	private static final int PUERTO_SERVIDOR_PRIMARIO = 777;
+	private static final int PUERTO_SERVIDOR_SECUNDARIO = 666;
 	private Servidor servidor1,servidor2;
 	private String IP_Monitor = "192.168.1.100";
 	private static final int PUERTO_MONITOR = 8888;
@@ -38,24 +38,27 @@ public class ControladorServidor{
 		return instance;
 	}
 	
-	public VentanaServidor getVista() {
-		return vista;
-	}
-	
 	public void Iniciar() {
 		try {
-			this.servidor1.iniciar();
 			vista = new VentanaServidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO);
+			this.servidor1.iniciar();
 		} catch (PuertoYaUsadoException e) {
+			vista.setVisible(false);
 			try {
-				this.servidor2.iniciar();
 				vista = new VentanaServidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO);
+				vista.setVisible(true);
+				this.servidor2.iniciar();
 			} catch (PuertoYaUsadoException e1) {
 				System.out.println("ya estan los 2 abiertos");
+				System.out.println("PuertoYaUsadoException INICIAR en CONTROLADOR SERVIDOR");
 			}
 		}
-
 		
+	}
+		
+	
+	public VentanaServidor getVista() {
+		return vista;
 	}
 	
 	public void ActualizarVistas(ArrayList<String> usuarios) {

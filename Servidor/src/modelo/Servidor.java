@@ -6,55 +6,81 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.BindException;
+import java.net.ConnectException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import controlador.ControladorServidor;
 import exception.PuertoYaUsadoException;
-import modelo.usuario.UsuarioYEstado;
+//import modelo.usuario.UsuarioYEstado;
+import exception.SecundarioCaidoException;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
 	private MensajesUsuario mensajesUsuario;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
+	private ArrayList<Solicitud> solicitudesActuales;
+	
+	private Directorio directorio;
+	
 	private String ipPropio;
 	private String IP_Monitor;
-	private final int puertoPING = 9999;
-	private int puertoPropio, puertoMonitor;
+	private String IP_Secundario;
+	
+	private int puertoPropio, puertoMonitor,puertoSecundario;
+	
 	private boolean soyPrimario;
-	private Directorio directorio;
+	
+	private int SolicitudID=0;
+	private boolean SeDebeSincronizar=false;
 	
 	public Servidor(String ipPropio,int puertoPropio, String ipMonitor,int puertoMonitor) {
 		SocketsDeUsuarios = new HashMap<String,Socket>();
 		mensajesUsuario = new MensajesUsuario();
+		solicitudesActuales = new ArrayList<Solicitud>();
 		this.ipPropio = ipPropio;
 		this.puertoPropio = puertoPropio;
 		this.IP_Monitor = ipMonitor;
 		this.puertoMonitor = puertoMonitor;
 		this.soyPrimario = false;
 		this.directorio = new Directorio();
+		
+		this.SolicitudID=0;
+		this.SeDebeSincronizar=false;
+		
+		
+		String ipcomun = crearIP();
+		this.ipPropio = ipcomun;
+		this.IP_Monitor =ipcomun;
+		
 	}
 	
     public void iniciar() throws PuertoYaUsadoException {
+		System.out.println("INICIAR en SERVIDOR primario["+soyPrimario+"]");
 		try {
 			InetAddress direccion = InetAddress.getByName(ipPropio);
             ServerSocket serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
             serverSocket.close();
             informarAlMonitor();
-            iniciarEscuchaClientes();
+            iniciarEscuchaClientes();	//escucha en puerto propio
             if (soyPrimario) {
             	System.out.println("pasa a ser primario");
-                escucharPingsDelMonitor();
+                //escucharPingsDelMonitor(); //Ahora escucha al monitor en el puerto propio
             }
 		} catch (IOException e) {
+			System.out.println("El metodo Servidor.iniciar() tira exception :"+e.getMessage());
 			throw new PuertoYaUsadoException();
 		}
     }
@@ -73,12 +99,13 @@ public class Servidor {
         }
     }
 
-    private void escucharPingsDelMonitor() {
+    	//Responde PING ECHO en el ip puerto comun del servidor.
+/*    private void escucharPingsDelMonitor() {
         new Thread(() -> {
             try{ // puerto reservado solo para pings
             	InetAddress direccion = InetAddress.getByName(ipPropio);
                 ServerSocket serverPing = new ServerSocket();
-                serverPing.bind(new InetSocketAddress(direccion, puertoPING));
+                serverPing.bind(new InetSocketAddress(direccion, puertoMonitor));
             	while (true) {
                     Socket socket = serverPing.accept();
                     DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -94,7 +121,7 @@ public class Servidor {
                 e.printStackTrace();
             }
         }).start();
-    }
+    }*/ 
     
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
@@ -103,7 +130,7 @@ public class Servidor {
                 ServerSocket serverSocket = new ServerSocket();
                 serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
                 
-                System.out.println("Servidor escuchando clientes en " + ipPropio + " " + puertoPropio);
+                System.out.println("Servidor escuchando en " + ipPropio + " " + puertoPropio);
                 while (true) {
                     Socket cliente = serverSocket.accept();
                     new Thread(() -> manejarCliente(cliente)).start();
@@ -116,79 +143,142 @@ public class Servidor {
 	
 	private void manejarCliente(Socket socket) {
 	    DataInputStream in = null;
+	    DataOutputStream out =null;
 	    try {
 	        in = new DataInputStream(socket.getInputStream());
+	        out = new DataOutputStream(socket.getOutputStream());
 	        String data = in.readUTF();
-	        System.out.println("Se recibió un mensaje de un cliente: " + data);
-	        String[] dataArray = data.split("`");
-
-	        String SOLICITUD = dataArray[0].toUpperCase();
-	        System.out.println("SOLICITUD RECIBIDA: " + SOLICITUD);
 	        
-	        String nombreUsuario = null;
+	        
+	        
+	        String[] dataArray = data.split("`");
+	        String SOLICITUD = dataArray[0].toUpperCase();
+	        
+	        
+	        if(!SOLICITUD.contains("PING")) {
+	        	System.out.println("Se recibió una solicitud: " + data);
+	        	String nombreUsuario = null;
+		        switch (SOLICITUD) {//Solicitudes de usuario
+		            case "REGISTRAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		            	
+		                nombreUsuario = dataArray[1];
+		                registrar(nombreUsuario, socket);
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "COMPROBAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		            	
+		            	nombreUsuario = dataArray[1];
+		                comprobarUsuarioSesion(nombreUsuario, socket);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "INICIAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		                
+		            	nombreUsuario = dataArray[1];
+		                iniciarSesion(nombreUsuario, socket);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "ENVIAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		                
+		            	nombreUsuario = dataArray[1];
+		                String Mensaje = dataArray[2];
+		                String NicknameReceptor = dataArray[3];
+		                System.out.println("ENVIANDO MENSAJE SERVIDOR");
+		                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "DESCONEXION":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
 
-	        switch (SOLICITUD) {
-	            case "REGISTRAR":
-	                nombreUsuario = dataArray[1];
-	                registrar(nombreUsuario, socket);
-	                break;
-	            case "COMPROBAR":
-	                nombreUsuario = dataArray[1];
-	                comprobarUsuarioSesion(nombreUsuario, socket);
-	                break;
-	            case "INICIAR":
-	                nombreUsuario = dataArray[1];
-	                iniciarSesion(nombreUsuario, socket);
-	                break;
-	            case "ENVIAR":
-	                nombreUsuario = dataArray[1];
-	                String Mensaje = dataArray[2];
-	                String NicknameReceptor = dataArray[3];
-	                System.out.println("ENVIANDO MENSAJE SERVIDOR");
-	                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
-	                break;
-	            case "SOS_PRIMARIO":
-	                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-	                escucharPingsDelMonitor();
-	                this.soyPrimario = true;
-	                break;
-	            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
-	            	String ip_secundario = dataArray[1];
-	            	int puerto_secundario = Integer.parseInt(dataArray[2]);
-	            	System.out.println("sincronizar con: " + ip_secundario + " " + puerto_secundario);
-	            	sincronizar(ip_secundario,puerto_secundario);
-	            	break;
-	            case "DESCONEXION":
-	            	String nickname = dataArray[1];
-	            	System.out.println("Cliente desconectado: " + nickname);
-	    	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
-	    	        if (nickname != null) {
-	    	            SocketsDeUsuarios.remove(nickname);
-	    	            this.directorio.NotificarDesconexion(nickname);
-	    	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
-	    	        }
-	            	break;
-	            case "DIRECTORIO":
-	            	//Llega la lista de contactos, que son solo strings con los nicknames
-					int cantidadContactos = Integer.parseInt(dataArray[1]);
-					this.directorio = new Directorio();
-					for (int i = 2; i < dataArray.length; i++) {
-						String nombre = dataArray[i];
-						i++;
-						String estado = dataArray[i];
-						System.out.println("usuario: " + nombre + " " + estado);
-						this.directorio.agregarUsuarioEstado(nombre, estado);
-					}
-					ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
-	            	break;
-	            default:
-	                System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
-	                break;
+		            	String nickname = dataArray[1];
+		            	System.out.println("Cliente desconectado: " + nickname);
+		    	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
+		    	        if (nickname != null) {
+		    	            SocketsDeUsuarios.remove(nickname);
+		    	            this.directorio.NotificarDesconexion(nickname);
+		    	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		    	        }
+		                
+		    	        ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		    	        EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "DIRECTORIO":
+		            	System.out.println("Se recibió el directorio");
+		            	//Llega la lista de contactos, que son solo strings con los nicknames
+						int cantidadContactos = Integer.parseInt(dataArray[1]);
+						this.directorio = new Directorio();
+						for (int i = 2; i < dataArray.length; i++) {
+							String nombre = dataArray[i];
+							i++;
+							String estado = dataArray[i];
+							System.out.println("usuario: " + nombre + " " + estado);
+							this.directorio.agregarUsuarioEstado(nombre, estado);
+						}
+						ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		            	break;
+		            	
+		            case "SOS_PRIMARIO":
+		                //escucharPingsDelMonitor();
+		                this.soyPrimario = true;
+		                break;
+		            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
+		            	this.SeDebeSincronizar=true;
+		            	
+		            	this.IP_Secundario = dataArray[1];
+		            	this.puertoSecundario = Integer.parseInt(dataArray[2]);
+		            	System.out.println("sincronizar con: " + this.IP_Secundario + " " + this.puertoSecundario);
+		            	EnviarDirectorioYMensajesASecundario();
+		            	break;
+		            case "ID_SOL":
+		            	AlmacenaSolicitud(Integer.parseInt(dataArray[1]),dataArray[2],dataArray);
+		            	//Se almacenan las solicitudes más recientes del servidor primario
+		            	//Por si se cae el primario saber que era lo que estaba haciendo
+		            	break;
+		            case "MENSAJES_PENDIENTES":
+		            	System.out.println("Se recibieron mensajes pendientes");
+		            	this.mensajesUsuario.CargarHashMap(data);
+		            	//this.mensajesUsuario.mostrarMensajes();
+		            	ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		            	break;
+		            default:
+		            	System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
+		            	break;
+		        }
+		        
+		        // Se actualiza la vista del servidor después de procesar la solicitud
+		        ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+	        }else {
+    			out.writeUTF("ECHO");
 	        }
-	        // Se actualiza la vista del servidor después de procesar la solicitud
-	        ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 
-	    } catch (IOException e) {
+	    }catch(SecundarioCaidoException e) {
+	    	if(this.soyPrimario) {
+				this.SeDebeSincronizar=false;
+				this.IP_Secundario = "";
+				this.puertoSecundario = 0;
+			}
+	    }
+	    catch (IOException e) {
+	    	
 	        e.printStackTrace();
 	        /*String nombre = Servidor.getNickname(socket);
 	        System.out.println("Cliente desconectado: " + nombre);
@@ -201,27 +291,86 @@ public class Servidor {
 	        }*/
 	    }
 	}
-	
-	private void sincronizar(String ip_secundario, int puerto_secundario) {
-		Socket socket;
+
+//---------Esto lo ejecuta el servidor cuando es secundario ------------
+	private void AlmacenaSolicitud(int idsol,String estado ,String dataArray[]) {    	
+    	if(estado.equalsIgnoreCase("ATENDIENDO")) {
+    		int i=3;
+    		String solicitudPrimario="";	//La solicitud que el servidor primario esta atendiendo ahora
+    		
+    		while (i<dataArray.length) {
+    			solicitudPrimario=solicitudPrimario+"`"+dataArray[i];
+    			i++;
+    		}
+    		
+    		this.solicitudesActuales.add(new Solicitud(idsol,true,solicitudPrimario));
+    	}
+    	else {
+    		if (idsol >= 0 && idsol < this.solicitudesActuales.size()) {
+    		    Solicitud Aeliminar = this.solicitudesActuales.get(idsol);
+    		    Aeliminar.setAtendiento(false);
+    		    this.solicitudesActuales.remove(idsol);
+    		}
+    		
+    	}
+	}
+
+//------------COMUNICACION CON SERVIDOR SECUNDARIO------------
+	private void ActualizarEstadoSolicitudAlSecundario(int solicitudID) throws SecundarioCaidoException {
+		String mensaje = "ID_SOL"+"`"+solicitudID+"`"+"ATENDIDA";
 		try {
-			//ServerSocket serverSocket = new ServerSocket(puerto_secundario);
-			//socket = new Socket(ip_secundario, puerto_secundario); va este en realidad
-			Socket socket_secundario = new Socket(ip_secundario, puerto_secundario);
+			Socket socket_secundario = new Socket(this.IP_Secundario, this.puertoSecundario);
 			DataOutputStream out_secundario = new DataOutputStream(socket_secundario.getOutputStream());
-			//out.writeUTF("servidor_conectado`"+this.ipPropio+"`"+puertoPropio);
-			//mandar todo el directorio
-			String todo_el_directorio = this.directorio.getDirectorioFormateado();
-			out_secundario.writeUTF(todo_el_directorio); //tiene que saber recibir el otro servidor
-			//mandar todos los mensajes
-			
-			//out.writeUTF("servidor_conectado`"+ip_secundario+"`"+puerto_secundario);
-			
-		}catch (IOException e) {
-			e.printStackTrace();
+			out_secundario.writeUTF(mensaje);
+		} catch (IOException e) {
+			if(e instanceof java.net.ConnectException) {
+				//Intento de comunicación con el secundario
+				throw new SecundarioCaidoException();
+			}
 		}
 	}
 
+	private void EnviarSolicitudRecibidaAlSecundario(int solicitudID, String data) throws SecundarioCaidoException {
+		String mensaje = "ID_SOL"+"`"+solicitudID+"`"+"ATENDIENDO"+"`"+data;
+		try {
+			Socket socket_secundario = new Socket(this.IP_Secundario, this.puertoSecundario);
+			DataOutputStream out_secundario = new DataOutputStream(socket_secundario.getOutputStream());
+			out_secundario.writeUTF(mensaje);
+		} catch (IOException e) {
+			if(e instanceof java.net.ConnectException) {
+				//Intento de comunicación con el secundario
+				throw new SecundarioCaidoException();
+			}
+		}
+	}
+
+	private void EnviarDirectorioYMensajesASecundario() throws SecundarioCaidoException {
+		if(SeDebeSincronizar) {
+			try {
+				Socket socket;
+				//---DIRECTORIO---
+				Socket socket_secundario = new Socket(this.IP_Secundario, this.puertoSecundario);
+				DataOutputStream out_secundario = new DataOutputStream(socket_secundario.getOutputStream());
+				
+				String todo_el_directorio = this.directorio.getDirectorioFormateado();
+				out_secundario.writeUTF(todo_el_directorio); 
+				
+				//---MENSAJES-PENDIENTES---
+				socket_secundario = new Socket(this.IP_Secundario, this.puertoSecundario);	//tuve que poner esto denuevo
+				out_secundario = new DataOutputStream(socket_secundario.getOutputStream()); //Porque no llegaban los mensajes pendientes
+				
+				String todo_Mensajes_Pendientes = this.mensajesUsuario.getTodosMensajesFormateado();
+				out_secundario.writeUTF(todo_Mensajes_Pendientes);
+			}catch (IOException e) {
+				if(e instanceof java.net.ConnectException) {
+					//Intento de comunicación con el secundario
+					throw new SecundarioCaidoException();
+				}
+			}
+		}
+	}
+
+//------------COMUNICACION CON CLIENTES------------
 	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
 		Socket socket_receptor = getSocket(nick_receptor);
@@ -282,12 +431,17 @@ public class Servidor {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion" + nickname);
 		
+		//Muestra todos los mensajes que pendiente de entregar.
 		mensajesUsuario.mostrarMensajes(); //aca hay que agarrar los mensajes de nickname y mandarselos para que cargue la vista
 		
+		
 		String mensaje = mensajesUsuario.historial_mensajes_recibidos(nickname);
+		// mensaje tiene una estructura similar a esto: 
+		//mensaje= "HISTORIAL`cantMensajes`emisor`mensaje`...." 
 		//lo tengo que sacar del historial
 		mensajesUsuario.eliminarMensajesYaLeidos(nickname);
 		if(!mensaje.equalsIgnoreCase("no_tuvo")) {
+			//Se le envian al cliente el historial con el formato mostrado arriba
 			mensaje_enviar += "`" + mensaje;
 			out.writeUTF(mensaje_enviar);
 		}
@@ -327,6 +481,30 @@ public class Servidor {
 	        }
 	    }
 	    return null;
+	}
+	
+	
+    public static String crearIP() {
+		InetAddress addr = null;
+		try {
+			Enumeration <NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+			while(interfaces.hasMoreElements()) {
+				NetworkInterface iface= interfaces.nextElement();
+				if(!iface.isUp() || iface.isLoopback()) continue;
+				
+				Enumeration<InetAddress> addresses = iface.getInetAddresses();
+				while (addresses.hasMoreElements()) {
+					addr = addresses.nextElement();
+					if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+						//System.out.println("IP privada real: " + addr.getHostAddress());
+					}
+				}
+			}
+			return addr.getHostAddress();
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }

@@ -2,6 +2,9 @@ package vista;
 
 
 import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import javax.swing.DefaultListModel;
@@ -10,11 +13,11 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 
-import modelo.Usuario;
-import modelo.Contacto.Contacto;
+
 
 
 public class VentanaServidor extends JFrame {
@@ -87,9 +90,32 @@ public class VentanaServidor extends JFrame {
 			}
 		});
 		JScrollPane sc = new JScrollPane(ListaUsuarios);
-		sc.setBounds(10, 40, 280, 500);
+		sc.setBounds(10, 40, 280, 300);
 		panel_Directorio.add(sc);
 		
+		
+		JLabel lblConsola = new JLabel("Consola:");
+		lblConsola.setFont(new Font("Arial", Font.BOLD, 20));
+		lblConsola.setBounds(10, 354, 100, 24);
+		panel_Directorio.add(lblConsola);
+		
+		
+		
+		JTextArea consola = new JTextArea();
+		consola.setEditable(false);
+		consola.setLineWrap(true);
+		consola.setWrapStyleWord(true);
+		JScrollPane sConsola = new JScrollPane(consola);
+		sConsola.setBounds(10, 389, 280, 144);
+		panel_Directorio.add(sConsola);
+		
+		ConsoleOutputStream cos = new ConsoleOutputStream(consola);
+		PrintStream ps = new PrintStream(cos);
+	    System.setOut(ps);
+	    
+	    //panel_Directorio.revalidate();
+	    panel_Directorio.repaint();
+
 	}
 
 

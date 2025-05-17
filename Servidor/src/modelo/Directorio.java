@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import controlador.ControladorServidor;
 
 
 public class Directorio {
@@ -23,7 +22,6 @@ public class Directorio {
 	}
 	
 	public void agregarUsuario(Usuario nuevo) {
-		String nicknameNuevo = nuevo.getNickname();
 	    this.estadoUsuarios.put(nuevo.getNickname(),true); //lo agrego como conectado
 	}
 	
@@ -38,14 +36,19 @@ public class Directorio {
 	public ArrayList<String> getUsuarios() {
 		ArrayList<String> DirectorioParaVista = new ArrayList<String>();
 		String mensaje;
+		String usuario;
 
 		for (Entry<String, Boolean> entry : this.estadoUsuarios.entrySet()) {
-		    mensaje = entry.getKey();
+			usuario = entry.getKey();
 		    boolean conectado = entry.getValue();
 		    if(entry.getValue())
-		    	mensaje = mensaje + "[online]";
-		    else
-		    	mensaje = mensaje + "[offline]";
+		    	mensaje = usuario + "  [online]";
+		    else {
+		    	int CantMensajes=MensajesUsuario.getInstance().CantMensajesPendientes(usuario);
+		    	System.out.println("ActualizaVistas CantMensajes="+CantMensajes+"usuario="+usuario);
+		    	mensaje = usuario + "  [offline]" + "     ["+ CantMensajes+"]mensajes pendientes";
+		    	
+		    }
 		    DirectorioParaVista.add(mensaje);
 		}
 	    return DirectorioParaVista;
