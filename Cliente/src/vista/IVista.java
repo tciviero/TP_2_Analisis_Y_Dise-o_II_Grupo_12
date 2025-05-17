@@ -38,6 +38,7 @@ public interface IVista extends INotificable{
 	void onFalloPuertoSinUso();
 
 	void onFalloUsuarioConSesionActiva(String nickname);
+	void onFalloConectarServidor();
 	void onFalloUsuarioNoRegistrado(String nickname);
 
 }

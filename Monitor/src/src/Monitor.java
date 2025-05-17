@@ -1,4 +1,4 @@
-package src;
+package src.src;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -49,15 +49,15 @@ public class Monitor {
 	
     private void escucharClientes() {
         try{
-        	InetAddress direccion = InetAddress.getByName(IP_Monitor);
+        	InetAddress local = InetAddress.getLocalHost();
+      
         	ServerSocket serverSocket = new ServerSocket();
             try {
-            	serverSocket.bind(new InetSocketAddress(direccion, PUERTO_MONITOR));
+            	serverSocket.bind(new InetSocketAddress(local.getHostAddress(), PUERTO_MONITOR));
             }catch (BindException e) {	//esta excepción sale cuando el ip no coincide con la de la pc
             	String IpActual=crearIP();
             	System.out.println("La ip ["+IP_Monitor+"] genera una BindException se carga el monitor en ["+IpActual+"]");
-            	direccion = InetAddress.getByName(IpActual);
-            	serverSocket.bind(new InetSocketAddress(direccion, PUERTO_MONITOR));
+            	serverSocket.bind(new InetSocketAddress(local.getHostAddress(), PUERTO_MONITOR));
             	this.IP_Monitor = IpActual;
             }
         	
