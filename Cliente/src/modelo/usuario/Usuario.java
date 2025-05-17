@@ -3,12 +3,14 @@ package modelo.usuario;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import excepciones.AgotoIntentosConectarException;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
@@ -19,7 +21,6 @@ import vista.INotificable;
 public class Usuario implements IFuncionalidadUsuario {
 	private static Usuario instancia = null;
 
-	private final String ip_monitor = "192.168.1.100";
 	private final int puerto_monitor = 8888;
 	private int puerto;
 	private String nickName,ip;
@@ -27,7 +28,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	private ArrayList<Contacto> agenda;
 	private ArrayList<Conversacion> conversaciones;
 	private ArrayList<UsuarioYEstado> directorio;
-	
+	private int intentosConectar;
 	private ArrayList<INotificable> suscriptores;
 	
 	public boolean estaConectado = false;
@@ -82,7 +83,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		this.directorio = new ArrayList<UsuarioYEstado>();
 	}
 	
-	public void iniciarSesion(String nickname) throws IOException {
+	public void iniciarSesion(String nickname) throws IOException, AgotoIntentosConectarException {
 		this.Conectar();
         //this.socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -99,15 +100,17 @@ public class Usuario implements IFuncionalidadUsuario {
 	}*/
 	
 	
-	public void Conectar() {
-	    while (true) {
+	public void Conectar() throws AgotoIntentosConectarException{
+		intentosConectar = 0;
+	    while (true && intentosConectar < 5) {
 	        try {
+	        	InetAddress local = InetAddress.getLocalHost();
 	            // Obtener nueva IP y puerto del monitor
 	            obtenerNuevoServidorDesdeMonitor(); 
 
-	            System.out.println("Conectando a servidor en " + this.ip_servidor + " : " + this.puerto_servidor);
+	            System.out.println("Conectando a servidor en " + local.getHostAddress() + " : " + this.puerto_servidor);
 	            this.socket = new Socket();
-	            socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
+	            socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 
 	            new Thread(() -> {
 	                EscucharMensajesServidor(socket);
@@ -115,20 +118,26 @@ public class Usuario implements IFuncionalidadUsuario {
 
 	            break; // si todo salió bien, salgo del bucle
 	        } catch (IOException e) {
-	            System.err.println("Fallo la conexión al servidor, reintentando en 3 segundos...");
+	        	intentosConectar++;
+	            System.err.println("Fallo la conexión al servidor, reintentando en 1 segundo...");
 	            try {
-	                Thread.sleep(3000);
+	                Thread.sleep(1000);
 	            } catch (InterruptedException ex) {
 	                ex.printStackTrace();
 	            }
 	        }
+	    }
+	    if (intentosConectar >= 5) {
+	    	//se agoto los intentos, tiro excepcion para avisar al usuario que no se pudo
+	    	throw new AgotoIntentosConectarException();
 	    }
 	}
 	
 	private void obtenerNuevoServidorDesdeMonitor() {
         try {
         	Socket socket = new Socket();
-			socket.connect(new InetSocketAddress(this.ip_monitor, this.puerto_monitor), 1000);
+        	InetAddress local = InetAddress.getLocalHost();
+			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_monitor), 1000);
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "CUAL_PRIMARIO";
 			out.writeUTF(mensajeRegistro);
@@ -137,7 +146,12 @@ public class Usuario implements IFuncionalidadUsuario {
 			System.out.println("El servidor nos envio este mensaje: "+data);
 			String[] dataArray = data.split("`");
 			this.ip_servidor = dataArray[0];
-			this.puerto_servidor = Integer.parseInt(dataArray[1]);
+			if(dataArray[1] == "NO_HAY") {
+				//esta el monitor pero no hay servidor
+			}
+			else {
+				this.puerto_servidor = Integer.parseInt(dataArray[1]);
+			}
 			
         } catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -242,6 +256,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 
 	public void enviarRequestRegistro() throws IOException {
+		System.out.println("hola");
         //socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
 		DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 		String mensajeRegistro = "Registrar" + "`" + nickName;
@@ -253,7 +268,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		obtenerNuevoServidorDesdeMonitor();
 		this.socket = new Socket();
         try {
-			this.socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
+        	InetAddress local = InetAddress.getLocalHost();
+			this.socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -284,7 +300,8 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
 		try {
 			Socket socket = new Socket();
-			socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
+			InetAddress local = InetAddress.getLocalHost();
+			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
@@ -298,7 +315,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		DataOutputStream out;
 		try {
 			Socket socket = new Socket();
-			socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
+			InetAddress local = InetAddress.getLocalHost();
+			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 			out = new DataOutputStream(socket.getOutputStream());
 			String mensaje = "DESCONEXION" + "`" + nickName;
 			out.writeUTF(mensaje);

@@ -19,6 +19,7 @@ import java.util.Enumeration;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import excepciones.AgotoIntentosConectarException;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
@@ -107,17 +108,18 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	private void registrar() {
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
-
+		try {
 			//if(!Usuario.getInstancia().isConectado()) {
-				Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
-				Usuario.getInstancia().Conectar();
+			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+			Usuario.getInstancia().Conectar();
 			//}
-			try {
-				Usuario.getInstancia().enviarRequestRegistro();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}	
+			Usuario.getInstancia().enviarRequestRegistro();
+		} catch (AgotoIntentosConectarException e) {
+			this.vista.onFalloConectarServidor();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
 	}
 
 	private void comprobarInicioSesion() {
@@ -129,6 +131,8 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
 			//ahora toca iniciar sesion
 			Usuario.getInstancia().iniciarSesion(nombre);
+		} catch (AgotoIntentosConectarException e) {
+			this.vista.onFalloConectarServidor();
 		} catch (UsuarioConSesionActivaException e) {
 			this.vista.onFalloUsuarioConSesionActiva(nombre);
 		} catch (UsuarioNoRegistradoException e) {
