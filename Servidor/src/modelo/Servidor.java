@@ -259,6 +259,10 @@ public class Servidor {
 		            	//this.mensajesUsuario.mostrarMensajes();
 		            	ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 		            	break;
+		            case "CONSULTA":
+		            	System.out.println("Se pide buscar nickname y devolver resultados");
+		            	DevolverResultadosBusquedaNickname(dataArray[1],dataArray[2]);
+		            	break;
 		            default:
 		            	System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
 		            	break;
@@ -397,11 +401,10 @@ public class Servidor {
 			System.out.println("registro de usuario: " + nickname);
 			mensaje_enviar +=  "OK"+"`"+"Registro exitoso";
 			//Hay un nuevo usuario y se deberia actualizar el directorio
-			//tanto del servidor como de todos los clientes
 			Servidor.SocketsDeUsuarios.put(nickname,socket);
 			//Se agrega al hashmap<nickname,socket> de esta clase
 			this.directorio.agregarUsuario(new Usuario(nickname));
-			ActualizaDirectoriosClientes();
+			//ActualizaDirectoriosClientes(); NO SE USA MAS, NO SE HACE ASI
 			System.out.println("mensaje enviado: " + mensaje_enviar);
 		}
 		else {
@@ -412,10 +415,23 @@ public class Servidor {
 		out.flush();
 	}
 	
+	public void DevolverResultadosBusquedaNickname(String nickname, String nicknameConsulta) {
+		Socket socket = SocketsDeUsuarios.get(nickname);
+		if(socket != null) {
+			try {
+				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+				out.writeUTF(this.directorio.getDirectorioFormateadoConsulta(nicknameConsulta));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	/* NO SE USA MAS, CADA CLIENTE PREGUNTA SOBRE CIERTO NICKNAME Y DEVUELVE PRIMEROS 10 RESULTADOS
 	public void ActualizaDirectoriosClientes() {
 		for (Socket socket : SocketsDeUsuarios.values()) {
 		    try {
-		        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+	        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		        out.writeUTF(this.directorio.getDirectorioFormateado());
 		        out.flush(); 
 		    } catch (IOException e) {
@@ -423,7 +439,7 @@ public class Servidor {
 		    }
 		}
 	}
-	
+	*/
 	private void iniciarSesion(String nickname, Socket socket) throws IOException {
 		String mensaje_enviar = "RES-INICIO`OK`Inicio exitoso";
 		SocketsDeUsuarios.put(nickname, socket);

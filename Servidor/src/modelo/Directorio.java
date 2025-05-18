@@ -69,6 +69,32 @@ public class Directorio {
 
 	    return directorioFormateado;
 	}
+	
+	public String getDirectorioFormateadoConsulta(String filtro) {
+		 StringBuilder sb = new StringBuilder("DIRECTORIO");
+	        int cont = 0;
+	        for (Entry<String, Boolean> e : this.estadoUsuarios.entrySet()) {
+	            if (e.getKey().contains(filtro)) {
+	                cont++;
+	                if (cont == 10) break;
+	            }
+	        }
+	        sb.append("`").append(cont);
+	        
+	        int añadidos = 0;
+	        for (Entry<String, Boolean> e : this.estadoUsuarios.entrySet()) {
+	            if (e.getKey().contains(filtro)) {
+	                sb.append("`")
+	                  .append(e.getKey())
+	                  .append("`")
+	                  .append(e.getValue() ? "online" : "offline");
+	                if (++añadidos == 10) break;
+	            }
+	        }
+	        
+	        System.out.println(sb.toString());
+	        return sb.toString();
+	}
 
 	public void NotificarDesconexion(String nickname) {
 		this.estadoUsuarios.put(nickname, false);
