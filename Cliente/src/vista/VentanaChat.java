@@ -80,6 +80,8 @@ public class VentanaChat extends JFrame implements IVista  {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 355, 155);
 		
+		setTitle("Bienvenido");
+		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(null);
@@ -457,6 +459,7 @@ public class VentanaChat extends JFrame implements IVista  {
 
 //Parte de Inicio-registro-conexion
 	public void conectado() {
+		setTitle("Usuario: " + getNickNameUsuarioText() + " Puerto: " + getPuertoUsuarioText());
 		setContentPane(panelVentanaChat);
 		setBounds(50, 50, 660, 695);
 		revalidate();
