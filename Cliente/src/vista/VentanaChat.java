@@ -590,7 +590,6 @@ public class VentanaChat extends JFrame implements IVista  {
 	
 	@Override
 	public void onFalloConectarServidor() {
-		System.out.println("hola");
 		new JNotification("No se pudo conectar al servidor");
 	}
 
