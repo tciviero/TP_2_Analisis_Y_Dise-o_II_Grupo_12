@@ -12,7 +12,7 @@ public class MensajesUsuario {
 	
 	private HashMap<String, HashMap<String, List<String>>> mensajes;
 	
-    public MensajesUsuario() {
+    private MensajesUsuario() {
         this.mensajes = new HashMap<>();
     }
     
@@ -25,13 +25,11 @@ public class MensajesUsuario {
     
     public int CantMensajesPendientes(String RRecept) {
         int i=0;
-    	for (String receptor : mensajes.keySet()) {
-            System.out.println("Mensajes para " + receptor + ":");
+        for (String receptor : mensajes.keySet()) {
             HashMap<String, List<String>> emisores = mensajes.get(receptor);
             for (String emisor : emisores.keySet()) {
-                System.out.println("  De " + emisor + ":");
                 for (String mensaje : emisores.get(emisor)) {
-                    System.out.println("    - " + mensaje);
+                    i++;
                 }
             }
         }

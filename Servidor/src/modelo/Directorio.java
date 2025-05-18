@@ -45,7 +45,6 @@ public class Directorio {
 		    	mensaje = usuario + "  [online]";
 		    else {
 		    	int CantMensajes=MensajesUsuario.getInstance().CantMensajesPendientes(usuario);
-		    	System.out.println("ActualizaVistas CantMensajes="+CantMensajes+"usuario="+usuario);
 		    	mensaje = usuario + "  [offline]" + "     ["+ CantMensajes+"]mensajes pendientes";
 		    	
 		    }

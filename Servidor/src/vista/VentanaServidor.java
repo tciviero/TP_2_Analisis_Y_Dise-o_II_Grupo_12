@@ -27,6 +27,7 @@ public class VentanaServidor extends JFrame {
 	private ArrayList<String> listaUsuarios;//del panel de directorio
 	private DefaultListModel<String> modelo;
 	private JList<String> ListaUsuarios;
+	private JLabel lblConsola = new JLabel("Consola:");
 
 	
 	public VentanaServidor(String Ip_Servidor, int Puerto_Servidor) {
@@ -37,7 +38,7 @@ public class VentanaServidor extends JFrame {
 
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		this.setVisible(true);
+		this.setVisible(false);
 		
 		JPanel panel_Inicio = new JPanel();
 		panel_Inicio.setBackground(new Color(128, 128, 255));
@@ -94,9 +95,9 @@ public class VentanaServidor extends JFrame {
 		panel_Directorio.add(sc);
 		
 		
-		JLabel lblConsola = new JLabel("Consola:");
+		lblConsola = new JLabel("Consola:");
 		lblConsola.setFont(new Font("Arial", Font.BOLD, 20));
-		lblConsola.setBounds(10, 354, 100, 24);
+		lblConsola.setBounds(10, 354, 220, 24);
 		panel_Directorio.add(lblConsola);
 		
 		
@@ -124,6 +125,12 @@ public class VentanaServidor extends JFrame {
 		for(String s:directorio) {
 			modelo.addElement(s);
 		}
+	}
+
+
+	public void setROL(String string) {
+		this.lblConsola.setText("Consola "+string+":");
+		
 	}
 	
 	

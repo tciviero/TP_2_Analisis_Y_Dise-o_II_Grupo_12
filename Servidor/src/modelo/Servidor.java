@@ -47,7 +47,7 @@ public class Servidor {
 	
 	public Servidor(String ipPropio,int puertoPropio, String ipMonitor,int puertoMonitor) {
 		SocketsDeUsuarios = new HashMap<String,Socket>();
-		mensajesUsuario = new MensajesUsuario();
+		mensajesUsuario = MensajesUsuario.getInstance();
 		solicitudesActuales = new ArrayList<Solicitud>();
 		this.ipPropio = ipPropio;
 		this.puertoPropio = puertoPropio;
@@ -67,10 +67,10 @@ public class Servidor {
 	}
 	
     public void iniciar() throws PuertoYaUsadoException {
-		System.out.println("INICIAR en SERVIDOR primario["+soyPrimario+"]");
 		try {
+			InetAddress direccion = InetAddress.getByName(ipPropio);
             ServerSocket serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress(ipPropio, puertoPropio));
+            serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
             serverSocket.close();
             informarAlMonitor();
             iniciarEscuchaClientes();	//escucha en puerto propio
@@ -85,6 +85,7 @@ public class Servidor {
     }
 
     private void informarAlMonitor() {
+    	System.out.println("ip:puertomonitor"+IP_Monitor+":"+puertoMonitor);
         try (Socket socket = new Socket(IP_Monitor, puertoMonitor)) {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeUTF("servidor_conectado`"+this.ipPropio+"`"+puertoPropio);
@@ -94,7 +95,6 @@ public class Servidor {
             System.out.println("El monitor respondió: " + respuesta);
             soyPrimario = respuesta.equalsIgnoreCase("sos_primario");
         } catch (IOException e) {
-        	System.out.println("hola");
             e.printStackTrace();
         }
     }
@@ -126,8 +126,9 @@ public class Servidor {
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
             try{
+            	InetAddress direccion = InetAddress.getByName(ipPropio);
                 ServerSocket serverSocket = new ServerSocket();
-                serverSocket.bind(new InetSocketAddress(ipPropio, puertoPropio));
+                serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
                 
                 System.out.println("Servidor escuchando en " + ipPropio + " " + puertoPropio);
                 while (true) {
@@ -155,7 +156,7 @@ public class Servidor {
 	        
 	        
 	        if(!SOLICITUD.contains("PING")) {
-	        	System.out.println("Se recibió una solicitud: " + data);
+	        	System.out.println("Se recibió una solicitud: " + SOLICITUD);
 	        	String nombreUsuario = null;
 		        switch (SOLICITUD) {//Solicitudes de usuario
 		            case "REGISTRAR":
@@ -229,7 +230,7 @@ public class Servidor {
 							String nombre = dataArray[i];
 							i++;
 							String estado = dataArray[i];
-							System.out.println("usuario: " + nombre + " " + estado);
+							//System.out.println("usuario: " + nombre + " " + estado);
 							this.directorio.agregarUsuarioEstado(nombre, estado);
 						}
 						ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
@@ -312,6 +313,7 @@ public class Servidor {
     		}
     		
     	}
+    	System.out.println("UltimaSolicitud ["+idsol+"] esta "+estado);
 	}
 
 //------------COMUNICACION CON SERVIDOR SECUNDARIO------------

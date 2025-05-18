@@ -4,7 +4,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -28,16 +27,8 @@ public class ControladorServidor{
 	
 	
 	private ControladorServidor() {
-		try {
-			InetAddress local = InetAddress.getLocalHost();
-			IP_servidor1 = local.getHostAddress();
-			IP_servidor2 = local.getHostAddress();
-			this.servidor1 = new Servidor(local.getHostAddress(),PUERTO_SERVIDOR_PRIMARIO,local.getHostAddress(),PUERTO_MONITOR);
-			this.servidor2 = new Servidor(local.getHostAddress(),PUERTO_SERVIDOR_SECUNDARIO,local.getHostAddress(),PUERTO_MONITOR);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.servidor1 = new Servidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO,IP_Monitor,PUERTO_MONITOR);
+		this.servidor2 = new Servidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO,IP_Monitor,PUERTO_MONITOR);
 	}
 	
 	public static ControladorServidor getInstance() {
@@ -51,17 +42,19 @@ public class ControladorServidor{
 		try {
 			vista = new VentanaServidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO);
 			this.servidor1.iniciar();
+			vista.setROL("Primario");
 		} catch (PuertoYaUsadoException e) {
-			vista.setVisible(false);
 			try {
 				vista = new VentanaServidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO);
 				vista.setVisible(true);
 				this.servidor2.iniciar();
+				vista.setROL("Secundario");
 			} catch (PuertoYaUsadoException e1) {
 				System.out.println("ya estan los 2 abiertos");
 				System.out.println("PuertoYaUsadoException INICIAR en CONTROLADOR SERVIDOR");
 			}
 		}
+		vista.setVisible(true);
 		
 	}
 		
