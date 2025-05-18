@@ -11,6 +11,6 @@ public interface INotificable {
 	void ActualizarDirectorio(ArrayList<UsuarioYEstado> directorio);
 	void conectado();
 	void OnNuevoNotificacion(String mensaje);
-
+	
 
 }

@@ -36,7 +36,9 @@ public class VentanaChat extends JFrame implements IVista  {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JPanel chatPane;
+	private JPanel panelVentanaChat;
+	private JPanel panelVentanaContactos;
+	private JPanel panelVentanaDirectorio;
 	
 	private JTextField NickNameUsuario;
 	private JTextField PuertoUsuario;
@@ -53,7 +55,11 @@ public class VentanaChat extends JFrame implements IVista  {
 	private ArrayList<Contacto> listaContactos;
 	private DefaultListModel<Contacto> modelo;
 	private JList<Contacto> Lista_Contactos;
-	private JButton btnIniciarConversacion; 	
+	private JButton btnIniciarConversacion;
+	private JButton btnVerContactos; 	
+	private JButton btnVerUsuarios; 	
+	private JButton btnVolverAChat;
+	private JButton btnVolverAChatDesdeDirectorio;
 	
 	private JPanel panel_Chat ;
 	private JLabel lblTituloChat;
@@ -78,9 +84,9 @@ public class VentanaChat extends JFrame implements IVista  {
 		setContentPane(contentPane);
 		
 		//panel de chat
-		chatPane = new JPanel();
-		chatPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		chatPane.setLayout(null);
+		panelVentanaChat = new JPanel();
+		panelVentanaChat.setBorder(new EmptyBorder(5, 5, 5, 5));
+		panelVentanaChat.setLayout(null);
 	
 //------Panel Inicio----------------------------------------------------------
 		JPanel panel_Inicio = new JPanel();
@@ -154,17 +160,33 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnIniciarSesion.setEnabled(false);
 		panel_Inicio.add(btnIniciarSesion);
 		
+		
+//-------panelVentanaContactos---------------------------------------------------
+		panelVentanaContactos = new JPanel();
+		panelVentanaContactos.setBackground(new Color(128, 128, 255));
+		panelVentanaContactos.setBounds(10, 10, 320, 100);
+		panelVentanaContactos.setLayout(null);
+		
+//-------panelVentanaContactos---------------------------------------------------
+		panelVentanaDirectorio = new JPanel();
+		panelVentanaDirectorio.setBackground(new Color(128, 128, 255));
+		panelVentanaDirectorio.setBounds(10, 10, 320, 100);
+		panelVentanaDirectorio.setLayout(null);
+		
+
+		
 //-------panel_Contactos---------------------------------------------------------
 		JPanel panel_Contactos = new JPanel();
 		panel_Contactos.setLayout(null);
 		panel_Contactos.setBackground(new Color(128, 128, 255));
-		panel_Contactos.setBounds(220, 10, 200, 640);
+		panel_Contactos.setBounds(10, 10, 200, 640);
 		//contentPane.add(panel_Contactos);
-		chatPane.add(panel_Contactos);
+		panelVentanaContactos.add(panel_Contactos);
 		
 		JLabel lblContactos = new JLabel("Contactos");
 		lblContactos.setFont(new Font("Arial", Font.BOLD, 20));
 		lblContactos.setBounds(10, 10, 200, 30);
+		
 		panel_Contactos.add(lblContactos);
 		
 		
@@ -200,7 +222,7 @@ public class VentanaChat extends JFrame implements IVista  {
 			}
 		});
 		JScrollPane sc = new JScrollPane(Lista_Contactos);
-		sc.setBounds(10, 65, 180, 565);
+		sc.setBounds(10, 105, 180, 525);
 		panel_Contactos.add(sc);
 		
 		btnIniciarConversacion = new JButton("Crear conversacion");
@@ -210,16 +232,23 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnIniciarConversacion.setEnabled(false);
 		panel_Contactos.add(btnIniciarConversacion);
 		
+		btnVolverAChat = new JButton("Volver");
+		btnVolverAChat.setBounds(10, 70, 150, 20);
+		//btnAgendar.setBounds(10, 40, 90, 20);
+		btnVolverAChat.setActionCommand("VOLVER");
+		btnVolverAChat.setEnabled(true);
+		panel_Contactos.add(btnVolverAChat);
+		
 //------panel_Conversaciones-----------------------------------------------
 		JPanel panel_Conversaciones = new JPanel();
 		panel_Conversaciones.setLayout(null);
 		panel_Conversaciones.setBackground(new Color(128, 128, 255));
-		panel_Conversaciones.setBounds(430, 10, 200, 640);
-		chatPane.add(panel_Conversaciones);
+		panel_Conversaciones.setBounds(10, 10, 200, 640);
+		panelVentanaChat.add(panel_Conversaciones);
 		
 		JLabel lblConversaciones = new JLabel("Conversaciones");
 		lblConversaciones.setFont(new Font("Arial", Font.BOLD, 20));
-		lblConversaciones.setBounds(10, 10, 200, 30);
+		lblConversaciones.setBounds(10, 0, 200, 100);
 		panel_Conversaciones.add(lblConversaciones);
 		
 		
@@ -242,17 +271,33 @@ public class VentanaChat extends JFrame implements IVista  {
 		
 		
 		JScrollPane scrollConversaciones = new JScrollPane(Lista_Conversacion);
-		scrollConversaciones.setBounds(10, 65, 180, 565);
+		scrollConversaciones.setBounds(10, 65, 180, 520);
 		panel_Conversaciones.add(scrollConversaciones);
+		
+		
+		btnVerContactos = new JButton("Nueva conversación");
+		btnVerContactos.setBounds(10, 590, 180, 20);
+		//btnAgendar.setBounds(10, 40, 90, 20);
+		btnVerContactos.setActionCommand("VER CONTACTOS");
+		btnVerContactos.setEnabled(true);
+		panel_Conversaciones.add(btnVerContactos);
+		
+		
+		btnVerUsuarios = new JButton("Agendar");
+		btnVerUsuarios.setBounds(10, 615, 180, 20);
+		//btnAgendar.setBounds(10, 40, 90, 20);
+		btnVerUsuarios.setActionCommand("BUSCAR USUARIOS");
+		btnVerUsuarios.setEnabled(true);
+		panel_Conversaciones.add(btnVerUsuarios);
 		
 		
 //------panel_CHAT---------------------------------------------------------
 		panel_Chat = new JPanel();
 		panel_Chat.setLayout(null);
 		panel_Chat.setBackground(new Color(128, 128, 255));
-		panel_Chat.setBounds(640, 10, 420, 640);
+		panel_Chat.setBounds(220, 10, 420, 640);
 		//contentPane.add(panel_Chat);
-		chatPane.add(panel_Chat);
+		panelVentanaChat.add(panel_Chat);
 		
 		
 		lblTituloChat = new JLabel("Chat");
@@ -312,7 +357,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		panel_Directorio.setLayout(null);
 		panel_Directorio.setBackground(new Color(128, 128, 255));
 		panel_Directorio.setBounds(10, 10, 200, 640);
-		chatPane.add(panel_Directorio);
+		panelVentanaDirectorio.add(panel_Directorio);
 		
 		JLabel lblDirectorio = new JLabel("Directorio");
 		lblDirectorio.setFont(new Font("Arial", Font.BOLD, 20));
@@ -333,6 +378,12 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnAgendar.setActionCommand("AGENDAR");
 		btnAgendar.setBounds(10, 40, 90, 20);
 		panel_Directorio.add(btnAgendar);
+		
+		btnVolverAChatDesdeDirectorio = new JButton("Volver");
+		btnVolverAChatDesdeDirectorio.setEnabled(true);
+		btnVolverAChatDesdeDirectorio.setActionCommand("VOLVER");
+		btnVolverAChatDesdeDirectorio.setBounds(110, 40, 90, 20);
+		panel_Directorio.add(btnVolverAChatDesdeDirectorio);
 
 		this.setVisible(true);
 		
@@ -377,6 +428,10 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnEnviar.addActionListener(var1);
 		btnIniciarSesion.addActionListener(var1);
 		btnAgendar.addActionListener(var1);
+		btnVerContactos.addActionListener(var1);
+		btnVerUsuarios.addActionListener(var1);
+		btnVolverAChat.addActionListener(var1);
+		btnVolverAChatDesdeDirectorio.addActionListener(var1);
 	}
 
 	@Override
@@ -384,11 +439,10 @@ public class VentanaChat extends JFrame implements IVista  {
 		Lista_Conversacion.addListSelectionListener(var1);
 	}
 
-	
 //Parte de Inicio-registro-conexion
 	public void conectado() {
-		setContentPane(chatPane);
-		setBounds(50, 50, 1085, 695);
+		setContentPane(panelVentanaChat);
+		setBounds(50, 50, 660, 695);
 		revalidate();
 	}
 
@@ -526,5 +580,30 @@ public class VentanaChat extends JFrame implements IVista  {
 	public void onFalloUsuarioNoRegistrado(String nickname) {
 		new JNotification("El usuario " + nickname + " no fue registrado.");
 	}
+
+
+	@Override
+	public void buscarUsuarios() {
+		setContentPane(panelVentanaDirectorio);
+		setBounds(50,50,240,695);
+		revalidate();
+	}
+
+
+	@Override
+	public void verContactos() {
+		setContentPane(panelVentanaContactos);
+		setBounds(50,50,240,695);
+		revalidate();
+		
+	}
+
+
+	@Override
+	public void volverAChat() {
+		conectado();
+	}
+	
+	
 
 }

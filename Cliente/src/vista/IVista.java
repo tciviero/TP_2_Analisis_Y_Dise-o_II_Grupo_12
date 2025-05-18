@@ -29,8 +29,10 @@ public interface IVista extends INotificable{
 	Conversacion getConversacionAbierta();
 	void CargarChat(Conversacion c);
 
+	void volverAChat();
 	
-
+	void buscarUsuarios();
+	void verContactos();
 	void OnRegistroContactoExitoso();
 	void OnFalloEnvioMensaje();
 	void onFalloPuertoYaEnUso();

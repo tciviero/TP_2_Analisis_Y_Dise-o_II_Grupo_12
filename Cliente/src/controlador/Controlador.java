@@ -148,11 +148,13 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		System.out.println("Se desea agendar a"+usuario.getNickname());
 		Usuario.getInstancia().agendarContacto(usuario.getNickname());
 		vista.ActualizaListaContactos();
+		this.vista.volverAChat();
 	}
 	
 	private void hablar() {
 		Contacto seleccionado = vista.getContactoSeleccionado();
 		Conversacion aAbrir = Usuario.getInstancia().getConversacion(seleccionado.getNickName());
+		this.vista.volverAChat();
 		vista.CargarChat(aAbrir);
 		vista.ActualizarListaConversaciones();
 	}
@@ -171,7 +173,18 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 	}
 	
+	public void buscarUsuarios() {
+		this.vista.buscarUsuarios();
+	}
 	
+	public void verContactos() {
+		this.vista.verContactos();
+	}
+	
+	public void volverAChat() {
+		this.vista.volverAChat();
+	}
+		
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String comando = e.getActionCommand();
@@ -190,6 +203,15 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 		else if(comando.equalsIgnoreCase("ENVIAR")) {
 			enviar();
+		}
+		else if(comando.equalsIgnoreCase("BUSCAR USUARIOS")) {
+			buscarUsuarios();
+		}
+		else if(comando.equalsIgnoreCase("VER CONTACTOS")) {
+			verContactos();
+		}
+		else if(comando.equalsIgnoreCase("VOLVER")) {
+			volverAChat();
 		}
 		else {
 			System.out.println("Se recibio el "+comando);
