@@ -1,4 +1,4 @@
-package src;
+package src.src;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
