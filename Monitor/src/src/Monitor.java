@@ -61,12 +61,9 @@ public class Monitor {
         try{
         	
         	InetAddress local = InetAddress.getLocalHost();
-      
 
             ServerSocket serverSocket = new ServerSocket();
             try {
-            	serverSocket.bind(new InetSocketAddress(local.getHostAddress(), PUERTO_MONITOR));
-            	this.IP_Monitor = IpActual;
                 serverSocket.bind(new InetSocketAddress(local.getHostAddress(), PUERTO_MONITOR));
             }catch (BindException e) {    //esta excepción sale cuando el ip no coincide con la de la pc
                 String IpActual=crearIP();
