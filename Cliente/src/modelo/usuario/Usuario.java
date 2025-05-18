@@ -133,7 +133,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	    }
 	}
 	
-	private void obtenerNuevoServidorDesdeMonitor() {
+	private void obtenerNuevoServidorDesdeMonitor() throws AgotoIntentosConectarException {
         try {
         	Socket socket = new Socket();
         	InetAddress local = InetAddress.getLocalHost();
@@ -146,8 +146,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			System.out.println("El servidor nos envio este mensaje: "+data);
 			String[] dataArray = data.split("`");
 			this.ip_servidor = dataArray[0];
-			if(dataArray[1] == "NO_HAY") {
-				//esta el monitor pero no hay servidor
+			System.out.println(dataArray[1]);
+			if(dataArray[1].equalsIgnoreCase("NO_HAY")) {
+				throw new AgotoIntentosConectarException();
 			}
 			else {
 				this.puerto_servidor = Integer.parseInt(dataArray[1]);
@@ -264,7 +265,8 @@ public class Usuario implements IFuncionalidadUsuario {
 		System.out.println("Se envia al servidor:"+mensajeRegistro);
 	}
 	
-	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, UsuarioNoRegistradoException {
+	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, AgotoIntentosConectarException,UsuarioNoRegistradoException {
+		
 		obtenerNuevoServidorDesdeMonitor();
 		this.socket = new Socket();
         try {
