@@ -1,4 +1,4 @@
-package src.src;
+package src;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -24,7 +24,6 @@ public class VentanaMonitor extends JFrame {
 	
 	private DefaultListModel<Servidor> modelo;
 	private JList<Servidor> Lista_Servidores;
-	private JButton btnIniciarConversacion;
 	
 
 	public VentanaMonitor() {
@@ -73,38 +72,18 @@ public class VentanaMonitor extends JFrame {
 		modelo = new DefaultListModel<Servidor>();
 		Lista_Servidores = new JList<Servidor>(modelo);
 		Lista_Servidores.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		Lista_Servidores.addListSelectionListener(e->{
-			if(!e.getValueIsAdjusting()) { 
-				//Aca se solto el click cuando se selecciona un elemento
-				Servidor c = Lista_Servidores.getSelectedValue();
-				if(c!=null) {
-					//Se selecciono el servidor c, se podria 
-					//System.out.println("Se selecciono a "+c);
-					//this.ConversacionAbierta=Usuario.getInstancia().getConversacion(c.getNickName());
-					//CargarChat(ConversacionAbierta);
-					btnIniciarConversacion.setEnabled(false);
-					btnIniciarConversacion.setEnabled(true);
-					
-				}
-				else {//Aca no hay nadie seleccionado
-					btnIniciarConversacion.setEnabled(false);
-				}
-			}
-			else {
-				//El click esta presionado sobre un elemento
-				//System.out.println("El click se ha presionado en un elemento");
-			}
-		});
+		
 		JScrollPane sc = new JScrollPane(Lista_Servidores);
 		sc.setBounds(10, 65, 395, 144);
 		panel_Servidores.add(sc);
 		
-		btnIniciarConversacion = new JButton("Crear conversacion");
+		/*btnIniciarConversacion = new JButton("Crear conversacion");
 		btnIniciarConversacion.setBounds(220, 18, 150, 20);
 		//btnAgendar.setBounds(10, 40, 90, 20);
 		btnIniciarConversacion.setActionCommand("HABLAR");
 		btnIniciarConversacion.setEnabled(false);
-		panel_Servidores.add(btnIniciarConversacion);
+		panel_Servidores.add(btnIniciarConversacion);*/
+		
 	}
 	
 	public void addActionListener(ActionListener var1) {
