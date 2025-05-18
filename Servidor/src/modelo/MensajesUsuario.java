@@ -9,6 +9,7 @@ import controlador.ControladorServidor;
 public class MensajesUsuario {
 	private static MensajesUsuario instance=null;
 	
+	private int cont=0;
 	
 	private HashMap<String, HashMap<String, List<String>>> mensajes;
 	
@@ -26,12 +27,14 @@ public class MensajesUsuario {
     public int CantMensajesPendientes(String RRecept) {
         int i=0;
         for (String receptor : mensajes.keySet()) {
-            HashMap<String, List<String>> emisores = mensajes.get(receptor);
-            for (String emisor : emisores.keySet()) {
-                for (String mensaje : emisores.get(emisor)) {
-                    i++;
-                }
-            }
+        	if(receptor.equals(RRecept)) {
+        		HashMap<String, List<String>> emisores = mensajes.get(receptor);
+        		for (String emisor : emisores.keySet()) {
+        			for (String mensaje : emisores.get(emisor)) {
+        				i++;
+        			}
+        		}
+        	}
         }
     	return i;
     }
@@ -74,7 +77,6 @@ public class MensajesUsuario {
     	this.mensajes.clear();
     	//"MENSAJES_PENDIENTES"+"receptor"+"emisor"+"mensaje"
     	String[] dataArray = MensajesPendientesCompleto.split("`");
-    	
     	for (int i = 1; i < dataArray.length; i += 3) {
             String receptor = dataArray[i];
             String emisor = dataArray[i + 1];
@@ -87,7 +89,8 @@ public class MensajesUsuario {
     }
     
     public void mostrarMensajes() {
-        for (String receptor : mensajes.keySet()) {
+    	this.cont++;
+    	for (String receptor : mensajes.keySet()) {
             System.out.println("Mensajes para " + receptor + ":");
             HashMap<String, List<String>> emisores = mensajes.get(receptor);
             for (String emisor : emisores.keySet()) {

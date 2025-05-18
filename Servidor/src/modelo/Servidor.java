@@ -28,7 +28,6 @@ import exception.SecundarioCaidoException;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
-	private MensajesUsuario mensajesUsuario;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	private ArrayList<Solicitud> solicitudesActuales;
 	
@@ -47,7 +46,6 @@ public class Servidor {
 	
 	public Servidor(String ipPropio,int puertoPropio, String ipMonitor,int puertoMonitor) {
 		SocketsDeUsuarios = new HashMap<String,Socket>();
-		mensajesUsuario = MensajesUsuario.getInstance();
 		solicitudesActuales = new ArrayList<Solicitud>();
 		this.ipPropio = ipPropio;
 		this.puertoPropio = puertoPropio;
@@ -257,7 +255,7 @@ public class Servidor {
 		            	break;
 		            case "MENSAJES_PENDIENTES":
 		            	System.out.println("Se recibieron mensajes pendientes");
-		            	this.mensajesUsuario.CargarHashMap(data);
+		            	MensajesUsuario.getInstance().CargarHashMap(data);
 		            	//this.mensajesUsuario.mostrarMensajes();
 		            	ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 		            	break;
@@ -371,7 +369,7 @@ public class Servidor {
 				socket_secundario = new Socket(this.IP_Secundario, this.puertoSecundario);	//tuve que poner esto denuevo
 				out_secundario = new DataOutputStream(socket_secundario.getOutputStream()); //Porque no llegaban los mensajes pendientes
 				
-				String todo_Mensajes_Pendientes = this.mensajesUsuario.getTodosMensajesFormateado();
+				String todo_Mensajes_Pendientes = MensajesUsuario.getInstance().getTodosMensajesFormateado();
 				out_secundario.writeUTF(todo_Mensajes_Pendientes);
 			}catch (IOException e) {
 				if(e instanceof java.net.ConnectException) {
@@ -395,7 +393,7 @@ public class Servidor {
 			out.writeUTF(mensaje_enviar);
 		} else {
 			System.out.println("usuario receptor: " + nick_receptor + " esta desconectado");
-			mensajesUsuario.agregarMensaje(nick_receptor, nick_emisor, mensaje); //lo guarda igual en el historial
+			MensajesUsuario.getInstance().agregarMensaje(nick_receptor, nick_emisor, mensaje); //lo guarda igual en el historial
 		}
 	}
 
@@ -455,15 +453,12 @@ public class Servidor {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion" + nickname);
 		
-		//Muestra todos los mensajes que pendiente de entregar.
-		mensajesUsuario.mostrarMensajes(); //aca hay que agarrar los mensajes de nickname y mandarselos para que cargue la vista
 		
-		
-		String mensaje = mensajesUsuario.historial_mensajes_recibidos(nickname);
+		String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
 		// mensaje tiene una estructura similar a esto: 
 		//mensaje= "HISTORIAL`cantMensajes`emisor`mensaje`...." 
 		//lo tengo que sacar del historial
-		mensajesUsuario.eliminarMensajesYaLeidos(nickname);
+		MensajesUsuario.getInstance().eliminarMensajesYaLeidos(nickname);
 		if(!mensaje.equalsIgnoreCase("no_tuvo")) {
 			//Se le envian al cliente el historial con el formato mostrado arriba
 			mensaje_enviar += "`" + mensaje;

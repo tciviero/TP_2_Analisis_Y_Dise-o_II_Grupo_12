@@ -37,14 +37,14 @@ public class Directorio {
 		ArrayList<String> DirectorioParaVista = new ArrayList<String>();
 		String mensaje;
 		String usuario;
-
 		for (Entry<String, Boolean> entry : this.estadoUsuarios.entrySet()) {
+			int CantMensajes=0;
 			usuario = entry.getKey();
 		    boolean conectado = entry.getValue();
 		    if(entry.getValue())
 		    	mensaje = usuario + "  [online]";
 		    else {
-		    	int CantMensajes=MensajesUsuario.getInstance().CantMensajesPendientes(usuario);
+		    	CantMensajes= MensajesUsuario.getInstance().CantMensajesPendientes(usuario);
 		    	mensaje = usuario + "  [offline]" + "     ["+ CantMensajes+"]mensajes pendientes";
 		    	
 		    }
