@@ -28,9 +28,11 @@ public class VentanaServidor extends JFrame {
 	private DefaultListModel<String> modelo;
 	private JList<String> ListaUsuarios;
 	private JLabel lblConsola = new JLabel("Consola:");
-
+	private JLabel lblPuerto;
+	private JLabel lblMuestraIp;
 	
 	public VentanaServidor(String Ip_Servidor, int Puerto_Servidor) {
+		super.setTitle("Servidor");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 350, 700);
 		contentPane = new JPanel();
@@ -46,11 +48,11 @@ public class VentanaServidor extends JFrame {
 		panel_Inicio.setLayout(null);
 		contentPane.add(panel_Inicio);
 		
-		JLabel lblPuerto = new JLabel("Puerto Servidor:"+Puerto_Servidor);
+		lblPuerto = new JLabel("Puerto Servidor:"+Puerto_Servidor);
 		lblPuerto.setBounds(10, 45, 280, 24);
 		panel_Inicio.add(lblPuerto);
-		
-		JLabel lblMuestraIp = new JLabel("IP Servidor:  "+Ip_Servidor);
+
+		lblMuestraIp = new JLabel("IP Servidor:  "+Ip_Servidor);
 		lblMuestraIp.setBounds(10, 10, 280, 24);
 		panel_Inicio.add(lblMuestraIp);
 		
@@ -128,11 +130,16 @@ public class VentanaServidor extends JFrame {
 	}
 
 
-	public void setROL(String string) {
-		this.lblConsola.setText("Consola "+string+":");
-		
+	public void ActualizaVistaIpPuertoRol(String rol,String Ip_Servidor,int Puerto_Servidor) {
+		super.setTitle("Servidor "+rol);
+		this.lblConsola.setText("Consola "+rol+":");
+		this.lblMuestraIp.setText("IP Servidor:  "+Ip_Servidor);
+		this.lblPuerto.setText("Puerto Servidor:"+Puerto_Servidor);
 	}
-	
-	
+	public void ActualizaVistaRol(String rol) {
+		super.setTitle("Servidor "+rol);
+		this.lblConsola.setText("Consola "+rol+":");
+	}
+
 
 }

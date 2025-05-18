@@ -28,7 +28,7 @@ public class VentanaMonitor extends JFrame {
 
 	public VentanaMonitor() {
 		
-		
+		super.setTitle("Monitor");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 480);
 				

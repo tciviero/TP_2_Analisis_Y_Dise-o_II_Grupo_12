@@ -42,13 +42,18 @@ public class ControladorServidor{
 		try {
 			vista = new VentanaServidor(IP_servidor1,PUERTO_SERVIDOR_PRIMARIO);
 			this.servidor1.iniciar();
-			vista.setROL("Primario");
+			if(this.servidor1.esPrimario()) {
+				vista.ActualizaVistaIpPuertoRol("Primario",this.servidor1.getIP(),this.servidor1.getPuerto());
+			}
+			else {
+				vista.ActualizaVistaIpPuertoRol("Secundario",this.servidor1.getIP(),this.servidor1.getPuerto());
+			}
 		} catch (PuertoYaUsadoException e) {
 			try {
 				vista = new VentanaServidor(IP_servidor2,PUERTO_SERVIDOR_SECUNDARIO);
 				vista.setVisible(true);
 				this.servidor2.iniciar();
-				vista.setROL("Secundario");
+				vista.ActualizaVistaIpPuertoRol("Secundario",this.servidor2.getIP(),this.servidor2.getPuerto());
 			} catch (PuertoYaUsadoException e1) {
 				System.out.println("ya estan los 2 abiertos");
 				System.out.println("PuertoYaUsadoException INICIAR en CONTROLADOR SERVIDOR");
@@ -56,6 +61,10 @@ public class ControladorServidor{
 		}
 		vista.setVisible(true);
 		
+	}
+	
+	public void ActualizarRolVista(String Rol) {
+		vista.ActualizaVistaRol(Rol);
 	}
 		
 	

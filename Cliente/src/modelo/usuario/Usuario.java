@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import controlador.Controlador;
 import excepciones.AgotoIntentosConectarException;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
@@ -113,8 +114,8 @@ public class Usuario implements IFuncionalidadUsuario {
 	            socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 
 	            new Thread(() -> {
-	                EscucharMensajesServidor(socket);
-	            }).start();
+	            	EscucharMensajesServidor();		                
+				}).start();
 
 	            break; // si todo salió bien, salgo del bucle
 	        } catch (IOException e) {
@@ -143,15 +144,16 @@ public class Usuario implements IFuncionalidadUsuario {
 			out.writeUTF(mensajeRegistro);
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 			String data = in.readUTF();
-			System.out.println("El servidor nos envio este mensaje: "+data);
+			System.out.println("El Monitor nos envio este mensaje: "+data);
 			String[] dataArray = data.split("`");
-			this.ip_servidor = dataArray[0];
-			System.out.println(dataArray[1]);
+			
 			if(dataArray[1].equalsIgnoreCase("NO_HAY")) {
 				throw new AgotoIntentosConectarException();
 			}
 			else {
+				this.ip_servidor = dataArray[0];
 				this.puerto_servidor = Integer.parseInt(dataArray[1]);
+				
 			}
 			
         } catch (IOException e) {
@@ -160,90 +162,156 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 	
-	private void EscucharMensajesServidor(Socket socket){
-		try {
-			System.out.println("Dentro de un hilo conectado al servidor... esperando");
-			//this.Conectado=true;
+	
+	private void ActualizaIPServidor(){
+        try {
+        	Socket socket = new Socket();
+        	InetAddress local = InetAddress.getLocalHost();
+			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_monitor), 1000);
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeRegistro = "CUAL_PRIMARIO";
+			out.writeUTF(mensajeRegistro);
 			DataInputStream in = new DataInputStream(socket.getInputStream());
-			while(true) {
-				String data = in.readUTF();
+			String data = in.readUTF();
+			System.out.println("El Monitor nos envio este mensaje: "+data);
+			String[] dataArray = data.split("`");
+			
+			if(dataArray[1].equalsIgnoreCase("NO_HAY")) {
+				
+			}
+			else {
+				this.ip_servidor = dataArray[0];
+				this.puerto_servidor = Integer.parseInt(dataArray[1]);
+				
+			}
+			
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void EscucharMensajesServidor(){
+		System.out.println("Dentro de un hilo conectado al servidor... esperando");
+		//this.Conectado=true;
+
+		DataInputStream in = null;
+		try {
+			in = new DataInputStream(socket.getInputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		while(true) {
+			try {
+				String data=null;
+				data = in.readUTF();
 				System.out.println("El servidor nos envio este mensaje: "+data);
 				String[] dataArray = data.split("`");
 				
 				String respuesta = dataArray[0].toUpperCase();
 				
-				switch(respuesta) {
-				case "RES-REGISTRO":
-					if(dataArray[1].equalsIgnoreCase("OK")) {
-						System.out.println("Usuario registrado exitosamente");
-						this.estaConectado = true;
-						EventoNotificacionRecibido(dataArray[2]);
-						VistaConectado();
-					}
-					else {
-						System.out.println("Error de registro:"+dataArray[2]);
-						EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
-					}
-				    break;
-				case "RES-INICIO":
-					if(dataArray[1].equalsIgnoreCase("OK")) {
-						System.out.println("Usuario Logueado exitosamente");
-						this.estaConectado = true;
-						EventoNotificacionRecibido(dataArray[2]);
-						VistaConectado();
-						int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
-						if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
-							String emisor,mensaje;
-							int aux = 5;
-							for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
-								emisor = dataArray[aux];
-								mensaje = dataArray[aux+1];
-								aux += 2;
-								System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
-								NuevoMensajeRecibido(emisor,mensaje);
-							}
+				suich(respuesta,dataArray);
+				
+			} catch (IOException e) {
+				//El servidor no responde se debe comunicar con el monitor
+				System.out.println("El servidor ["+this.ip_servidor+":"+this.puerto_servidor+"] no responde esperando al monitor...");
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				
+				ActualizaIPServidor();
+				
+				try {
+					this.socket.close();
+					this.socket = new Socket();
+					this.socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
+					in = new DataInputStream(socket.getInputStream());
+					System.out.println("El servidor ["+this.ip_servidor+":"+this.puerto_servidor+"] es el nuevo servidor primario");
+				} catch (IOException e1) {
+					//Se genera socketTimeOutException pero solo repite el mensaje de arriba
+					//Esperando al monitor...
+				}
+				
+			}
+		}
+
+	}
+	
+	private void suich(String respuesta,String[] dataArray) {
+		switch(respuesta) {
+		case "RES-REGISTRO":
+			if(dataArray[1].equalsIgnoreCase("OK")) {
+				System.out.println("Usuario registrado exitosamente");
+				this.estaConectado = true;
+				EventoNotificacionRecibido(dataArray[2]);
+				VistaConectado();
+			}
+			else {
+				System.out.println("Error de registro:"+dataArray[2]);
+				EventoNotificacionRecibido("Error de registro:"+dataArray[2]);
+			}
+			break;
+		case "RES-INICIO":
+			if(dataArray[1].equalsIgnoreCase("OK")) {
+				System.out.println("Usuario Logueado exitosamente");
+				this.estaConectado = true;
+				EventoNotificacionRecibido(dataArray[2]);
+				VistaConectado();
+				if(dataArray.length>3) {
+					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
+					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
+						String emisor,mensaje;
+						int aux = 5;
+						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
+							emisor = dataArray[aux];
+							mensaje = dataArray[aux+1];
+							aux += 2;
+							System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
+							NuevoMensajeRecibido(emisor,mensaje);
 						}
 					}
-					else {
-						System.out.println("Error de Inicio:"+dataArray[2]);
-						EventoNotificacionRecibido("Error de Inicio:"+dataArray[2]);
-					}
-					break;
-				case "Res-envio":
-					if(dataArray[1] == "OK") {
-						//envio exitoso
-					}
-					else {
-						//error envio
-					}
-					break;
-				case "RECIBIR":
-					String nicknameEmisor=dataArray[1];
-					String mensaje=dataArray[2];
-					NuevoMensajeRecibido(nicknameEmisor,mensaje);
-					break;
-				case "DIRECTORIO":
-					//Llega la lista de contactos, que son solo strings con los nicknames
-					int cantidadContactos = Integer.parseInt(dataArray[1]);
-					this.directorio.clear();
-					for (int i = 2; i < dataArray.length; i++) {
-						String nickname=dataArray[i];
-						i++;
-						String estado= dataArray[i];
-						System.out.println("usuario: " + nickname + estado);
-						this.directorio.add(new UsuarioYEstado(nickname,estado));
-					}
-					EventoDirectorioRecibido();
-					break;
-				default:
-					System.out.println("Respuesta ("+respuesta+") desconocida");
-					break;
 				}
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			else {
+				System.out.println("Error de Inicio:"+dataArray[2]);
+				EventoNotificacionRecibido("Error de Inicio:"+dataArray[2]);
+			}
+			break;
+		case "Res-envio":
+			if(dataArray[1] == "OK") {
+				//envio exitoso
+			}
+			else {
+				//error envio
+			}
+			break;
+		case "RECIBIR":
+			String nicknameEmisor=dataArray[1];
+			String mensaje=dataArray[2];
+			NuevoMensajeRecibido(nicknameEmisor,mensaje);
+			break;
+		case "DIRECTORIO":
+			//Llega la lista de contactos, que son solo strings con los nicknames
+			int cantidadContactos = Integer.parseInt(dataArray[1]);
+			this.directorio.clear();
+			for (int i = 2; i < dataArray.length; i++) {
+				String nickname=dataArray[i];
+				i++;
+				String estado= dataArray[i];
+				System.out.println("usuario: " + nickname + estado);
+				this.directorio.add(new UsuarioYEstado(nickname,estado));
+			}
+			EventoDirectorioRecibido();
+			break;
+		default:
+			System.out.println("Respuesta ("+respuesta+") desconocida");
+			break;
 		}
+
+		
 	}
 
 	/*public boolean isConectado() {

@@ -199,6 +199,7 @@ public class Monitor {
                 //Se caé el secundario
             	this.EstaConectadoSecundario=false;
             	this.puertoSecundario=0;
+            	this.secundario.setPuerto(0);
             	this.secundario.setLastPing(false);
                 //System.out.println("servidor secundario Caido ["+ping.format(formato)+"]");
             }
@@ -252,6 +253,11 @@ public class Monitor {
         try (Socket socket = new Socket(ip_secundario, puertoSecundario)) {
         	this.ip_primario = ip_secundario;
         	this.puertoPrimario = puertoSecundario;
+        	this.primario.setIp(ip_secundario);
+        	this.primario.setPuerto(puertoSecundario);
+        	this.secundario.setPuerto(0);
+        	this.secundario.setIp(null);
+        	ActualizaServidores();
         	this.puertoSecundario = 0;
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeUTF("SOS_PRIMARIO");

@@ -131,6 +131,7 @@ public class Servidor {
                 serverSocket.bind(new InetSocketAddress(direccion, puertoPropio));
                 
                 System.out.println("Servidor escuchando en " + ipPropio + " " + puertoPropio);
+                
                 while (true) {
                     Socket cliente = serverSocket.accept();
                     new Thread(() -> manejarCliente(cliente)).start();
@@ -239,6 +240,7 @@ public class Servidor {
 		            case "SOS_PRIMARIO":
 		                //escucharPingsDelMonitor();
 		                this.soyPrimario = true;
+		                ControladorServidor.getInstance().ActualizarRolVista("Primario");
 		                break;
 		            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
 		            	this.SeDebeSincronizar=true;
@@ -282,8 +284,13 @@ public class Servidor {
 			}
 	    }
 	    catch (IOException e) {
+	    	InetAddress remoteAddress = socket.getInetAddress();
+            int remotePort = socket.getPort();
+            
+            InetAddress localAddress = socket.getLocalAddress();
+            int localPort = socket.getLocalPort();
+	    	System.out.println("Se deconecto IP:puerto"+remoteAddress.getHostAddress()+":"+remotePort);
 	    	
-	        e.printStackTrace();
 	        /*String nombre = Servidor.getNickname(socket);
 	        System.out.println("Cliente desconectado: " + nombre);
 	        
@@ -522,6 +529,18 @@ public class Servidor {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public String getIP() {
+		return this.ipPropio;
+	}
+
+	public int getPuerto() {
+		return this.puertoPropio;
+	}
+
+	public boolean esPrimario() {
+		return this.soyPrimario;
 	}
 
 }
