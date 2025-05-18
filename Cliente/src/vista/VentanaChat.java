@@ -60,11 +60,13 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JButton btnVerUsuarios; 	
 	private JButton btnVolverAChat;
 	private JButton btnVolverAChatDesdeDirectorio;
+	private JButton btnBuscarNickname;
 	
 	private JPanel panel_Chat ;
 	private JLabel lblTituloChat;
 	private JTextArea Chat;
 	private JTextField Teclado;
+	private JTextField tecladoDirectorio;
 	private Conversacion ConversacionAbierta;
 
 	private ArrayList<UsuarioYEstado> Directorio;
@@ -359,6 +361,8 @@ public class VentanaChat extends JFrame implements IVista  {
 		panel_Directorio.setBounds(10, 10, 200, 640);
 		panelVentanaDirectorio.add(panel_Directorio);
 		
+		
+		
 		JLabel lblDirectorio = new JLabel("Directorio");
 		lblDirectorio.setFont(new Font("Arial", Font.BOLD, 20));
 		lblDirectorio.setBounds(10, 10, 180, 30);
@@ -370,20 +374,31 @@ public class VentanaChat extends JFrame implements IVista  {
 		Lista_Directorio.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		JScrollPane sc_1 = new JScrollPane(Lista_Directorio);
-		sc_1.setBounds(10, 65, 180, 565);
+		sc_1.setBounds(10, 110, 190, 520);
 		panel_Directorio.add(sc_1);
 		
 		btnAgendar = new JButton("Agendar");
 		btnAgendar.setEnabled(true);
 		btnAgendar.setActionCommand("AGENDAR");
-		btnAgendar.setBounds(10, 40, 90, 20);
+		btnAgendar.setBounds(10, 80, 90, 20);
 		panel_Directorio.add(btnAgendar);
 		
 		btnVolverAChatDesdeDirectorio = new JButton("Volver");
 		btnVolverAChatDesdeDirectorio.setEnabled(true);
 		btnVolverAChatDesdeDirectorio.setActionCommand("VOLVER");
-		btnVolverAChatDesdeDirectorio.setBounds(110, 40, 90, 20);
+		btnVolverAChatDesdeDirectorio.setBounds(110, 80, 90, 20);
 		panel_Directorio.add(btnVolverAChatDesdeDirectorio);
+		
+		btnBuscarNickname = new JButton("Buscar");
+		btnBuscarNickname.setEnabled(true);
+		btnBuscarNickname.setActionCommand("BUSCAR NICKNAME");
+		btnBuscarNickname.setBounds(110, 45, 90, 20);
+		panel_Directorio.add(btnBuscarNickname);
+		
+		
+		tecladoDirectorio = new JFormattedTextField();
+		tecladoDirectorio.setBounds(20, 50, 90, 25);
+		panelVentanaDirectorio.add(tecladoDirectorio);
 
 		this.setVisible(true);
 		
@@ -432,6 +447,7 @@ public class VentanaChat extends JFrame implements IVista  {
 		btnVerUsuarios.addActionListener(var1);
 		btnVolverAChat.addActionListener(var1);
 		btnVolverAChatDesdeDirectorio.addActionListener(var1);
+		btnBuscarNickname.addActionListener(var1);
 	}
 
 	@Override
@@ -602,6 +618,19 @@ public class VentanaChat extends JFrame implements IVista  {
 	@Override
 	public void volverAChat() {
 		conectado();
+	}
+
+
+	@Override
+	public String getSearchText() {
+		return this.tecladoDirectorio.getText();
+	}
+
+
+	@Override
+	public void onUsuarioAgendadoExitosamente() {
+		new JNotification("Usuario agendando!");
+		
 	}
 	
 	

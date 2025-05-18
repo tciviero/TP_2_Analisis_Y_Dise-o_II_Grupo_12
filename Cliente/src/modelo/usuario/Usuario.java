@@ -257,12 +257,26 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 
 	public void enviarRequestRegistro() throws IOException {
-		System.out.println("hola");
         //socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
 		DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 		String mensajeRegistro = "Registrar" + "`" + nickName;
 		out.writeUTF(mensajeRegistro);
 		System.out.println("Se envia al servidor:"+mensajeRegistro);
+	}
+	
+	public void enviarRequestConsultaDirectorio(String nicknameConsulta) {
+		try {
+			Socket socket = new Socket();
+			InetAddress local = InetAddress.getLocalHost();
+			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			String mensajeConsulta = "CONSULTA" + "`" + nickName + "`" + nicknameConsulta;
+			System.out.println(nickName + " CONSULTA POR " + nicknameConsulta);
+			out.writeUTF(mensajeConsulta);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, AgotoIntentosConectarException,UsuarioNoRegistradoException {
@@ -439,5 +453,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void agendarContacto(String nickname) {
 		agendarContacto(new Contacto(nickname));
 	}
+
+
 	
 }

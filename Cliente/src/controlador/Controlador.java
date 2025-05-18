@@ -149,6 +149,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		Usuario.getInstancia().agendarContacto(usuario.getNickname());
 		vista.ActualizaListaContactos();
 		this.vista.volverAChat();
+		this.vista.onUsuarioAgendadoExitosamente();
 	}
 	
 	private void hablar() {
@@ -184,6 +185,13 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	public void volverAChat() {
 		this.vista.volverAChat();
 	}
+	
+	public void buscarNickname() {
+		String nickname = vista.getSearchText();
+		if(!nickname.equalsIgnoreCase("")) {
+			Usuario.getInstancia().enviarRequestConsultaDirectorio(nickname);
+		}
+	}
 		
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -206,6 +214,9 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		}
 		else if(comando.equalsIgnoreCase("BUSCAR USUARIOS")) {
 			buscarUsuarios();
+		}
+		else if(comando.equalsIgnoreCase("BUSCAR NICKNAME")) {
+			buscarNickname();
 		}
 		else if(comando.equalsIgnoreCase("VER CONTACTOS")) {
 			verContactos();

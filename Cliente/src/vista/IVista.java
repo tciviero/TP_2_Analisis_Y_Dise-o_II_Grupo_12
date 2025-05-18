@@ -12,6 +12,7 @@ public interface IVista extends INotificable{
 	void addActionListener(ActionListener var1);
 	void addListSelectionListener(ListSelectionListener var1);
 	
+	String getSearchText();
 	String getNickNameUsuarioText();
 	String getTecladoText();
 	String getPuertoUsuarioText();
@@ -38,6 +39,7 @@ public interface IVista extends INotificable{
 	void onFalloPuertoYaEnUso();
 	void onFalloPuertoFueraRango();
 	void onFalloPuertoSinUso();
+	void onUsuarioAgendadoExitosamente();
 
 	void onFalloUsuarioConSesionActiva(String nickname);
 	void onFalloConectarServidor();
