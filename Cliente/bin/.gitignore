@@ -1,9 +1,7 @@
 /bin/
-/exception/
-/exceptions/
-/src/
 /controlador/
 /excepciones/
-/main/
 /modelo/
+/src/
 /vista/
+/main/

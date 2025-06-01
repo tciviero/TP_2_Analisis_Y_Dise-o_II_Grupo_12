@@ -92,15 +92,6 @@ public class Usuario implements IFuncionalidadUsuario {
 		out.writeUTF(mensaje_servidor);
 	}
 	
-	/*public void Conectar() throws IOException {
-		socket = new Socket();
-		socket.connect(new InetSocketAddress(ip, PUERTO_SERVIDOR), 1000);
-		new Thread(() -> {
-			EscucharMensajesServidor(socket);
-		}).start();
-	}*/
-	
-	
 	public void Conectar() throws AgotoIntentosConectarException{
 		intentosConectar = 0;
 	    while (true && intentosConectar < 5) {
@@ -114,7 +105,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	            socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 
 	            new Thread(() -> {
-	            	EscucharMensajesServidor();		                
+	            	EscucharMensajesServidor();
 				}).start();
 
 	            break; // si todo salió bien, salgo del bucle
@@ -259,7 +250,9 @@ public class Usuario implements IFuncionalidadUsuario {
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
 				EventoNotificacionRecibido(dataArray[2]);
+				System.out.println("llega antes de vista conectado");
 				VistaConectado();
+				System.out.println("llega despues de vista conectado");
 				if(dataArray.length>3) {
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
 					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes

@@ -451,7 +451,7 @@ public class Servidor {
 		this.directorio.NotificarConexion(nickname);
 		ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		System.out.println("se inicia sesion" + nickname);
+		System.out.println("se inicia sesion " + nickname);
 		
 		
 		String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
@@ -462,6 +462,8 @@ public class Servidor {
 		if(!mensaje.equalsIgnoreCase("no_tuvo")) {
 			//Se le envian al cliente el historial con el formato mostrado arriba
 			mensaje_enviar += "`" + mensaje;
+			out.writeUTF(mensaje_enviar);
+		}else {
 			out.writeUTF(mensaje_enviar);
 		}
 	}
