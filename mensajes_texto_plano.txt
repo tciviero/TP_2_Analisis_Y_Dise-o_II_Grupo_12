@@ -1,0 +1,12 @@
+2025-06-04T17:41:05.527518400|oscar|tete|hola desde el nuevo a tete1
+2025-06-04T17:41:17.578115|oscar|dede|hola desde el nuevo a dede1
+2025-06-04T17:41:36.449568500|tete|oscar|respondo al nuevo desde tete2
+2025-06-04T17:41:47.212524700|dede|oscar|te respondo querido desde dede2
+2025-06-04T17:41:55.889518|oscar|dede|respondo3
+2025-06-04T17:41:59.979271900|oscar|tete|respondo3
+2025-06-04T17:42:14.930192300|oscar|dede|te desconectaste4
+2025-06-04T17:42:22.251135200|oscar|tete|te desconectaste papa4
+2025-06-04T17:43:09.762910800|tete|oscar|volviii5
+2025-06-04T17:43:17.397214300|dede|oscar|que tal amigo !!5
+2025-06-04T17:43:25.468795500|oscar|dede|ad
+2025-06-04T17:43:27.792873700|oscar|tete|tete

@@ -305,19 +305,21 @@ public class Usuario implements IFuncionalidadUsuario {
 			if(dataArray[1].equalsIgnoreCase("OK")) {
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
-				EventoNotificacionRecibido(dataArray[2]);
+				EventoNotificacionRecibido(dataArray[2]); //revisar esto
 				VistaConectado();
-				if(dataArray.length>3) {
+				if(dataArray.length>4) {
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
 					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
-						String emisor,mensaje;
+						String emisor,receptor,mensaje;
 						int aux = 5;
 						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
 							emisor = dataArray[aux];
-							mensaje = dataArray[aux+1];
-							aux += 2;
+							receptor = dataArray[aux+1];
+							mensaje = dataArray[aux+2];
+							aux += 3;
 							System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
-							NuevoMensajeRecibido(emisor,mensaje);
+							//mensajes que mandamos o recibimos
+							NuevoMensajeRecibido(emisor,receptor,mensaje);
 						}
 					}
 				}
@@ -339,6 +341,7 @@ public class Usuario implements IFuncionalidadUsuario {
 			String nicknameEmisor=dataArray[1];
 			String mensaje=dataArray[2];
 			NuevoMensajeRecibido(nicknameEmisor,mensaje);
+			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje);
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -459,10 +462,24 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	@Override
+	public void NuevoMensajeRecibido(String Emisor,String Receptor, String texto) {
+		//cuando el emisor es nickname 
+		System.out.println("AAAAA: recibimos mensaje:"+texto);
+		if(Receptor.equalsIgnoreCase(this.nickName)) {
+			Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
+			c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
+		}else {
+			Conversacion c = getConversacion(Receptor);
+			c.addMensaje(Emisor, texto, false);			
+		}
+		EventoNuevoMensajeRecibido();
+	}
+	
+
 	public void NuevoMensajeRecibido(String Emisor, String texto) {
 		System.out.println("AAAAA: recibimos mensaje:"+texto);
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
-		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
+		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
 		EventoNuevoMensajeRecibido();
 		
 	}
