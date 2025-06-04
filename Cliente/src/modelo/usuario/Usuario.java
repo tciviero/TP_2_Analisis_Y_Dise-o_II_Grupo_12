@@ -9,9 +9,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import controlador.Controlador;
 import excepciones.AgotoIntentosConectarException;
+import excepciones.NoRespondePrimario;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
@@ -38,6 +40,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	private int puerto_servidor;
 	private Socket socket;	//con el socket se comunica con el servidor
 	//private ServerSocket serverSocket;
+	CountDownLatch latchConexion;
 	
 	private Usuario() {
 		suscriptores = new ArrayList<INotificable>();
@@ -93,6 +96,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	public void Conectar() throws AgotoIntentosConectarException{
+		this.latchConexion = new CountDownLatch(1);
 		intentosConectar = 0;
 	    while (true && intentosConectar < 5) {
 	        try {
@@ -107,8 +111,12 @@ public class Usuario implements IFuncionalidadUsuario {
 	            new Thread(() -> {
 	            	EscucharMensajesServidor();
 				}).start();
-
-	            break; // si todo salió bien, salgo del bucle
+	            
+	            /*String mensaje = "agregar_socket`"+this.nickName;
+	            enviarMensaje(mensaje);
+	            System.out.println("se manda agregar socket al servidor");*/
+	             
+	            break; // si todo salio bien, salgo del bucle
 	        } catch (IOException e) {
 	        	intentosConectar++;
 	            System.err.println("Fallo la conexión al servidor, reintentando en 1 segundo...");
@@ -125,7 +133,47 @@ public class Usuario implements IFuncionalidadUsuario {
 	    }
 	}
 	
-	private void obtenerNuevoServidorDesdeMonitor() throws AgotoIntentosConectarException {
+	public void esperarConexion() {
+	    try {
+	        this.latchConexion.await();
+	    } catch (InterruptedException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	private final Object lockEnvio = new Object();
+
+	private void enviarMensaje(String mensaje) {
+	    synchronized (lockEnvio) {
+	        try {
+	            DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+	            out.writeUTF(mensaje);
+	            out.flush();
+	        } catch (IOException e) {
+	            System.err.println("Error al enviar mensaje: " + e.getMessage());
+	        }
+	    }
+	}
+	
+	/*private void enviarAgregarSocketAlServidor() {
+	    String mensaje = "agregar_socket`" + this.nickName;
+		try {
+	        DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+	        out.writeUTF(mensaje);
+	        out.flush();
+	        System.out.println("se le envia al servidor");
+	    } catch (IOException e) {
+	        System.err.println("Error al enviar mensaje al servidor: " + e.getMessage());
+	    }
+	}*/
+	
+	public void enviarRequestRegistro() throws IOException {
+		String mensaje = "registrar`"+this.nickName;
+        enviarMensaje(mensaje);
+		System.out.println("se envia registrar al servidor");
+	}
+	
+	public void obtenerNuevoServidorDesdeMonitor() throws AgotoIntentosConectarException {
         try {
         	Socket socket = new Socket();
         	InetAddress local = InetAddress.getLocalHost();
@@ -152,7 +200,6 @@ public class Usuario implements IFuncionalidadUsuario {
 			e.printStackTrace();
 		}
 	}
-	
 	
 	private void ActualizaIPServidor(){
         try {
@@ -183,6 +230,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	private void EscucharMensajesServidor(){
+		
 		System.out.println("Dentro de un hilo conectado al servidor... esperando");
 		//this.Conectado=true;
 
@@ -192,7 +240,10 @@ public class Usuario implements IFuncionalidadUsuario {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		
+		 //socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
+		DataOutputStream out;
+		
 		while(true) {
 			try {
 				String data=null;
@@ -220,7 +271,12 @@ public class Usuario implements IFuncionalidadUsuario {
 					this.socket = new Socket();
 					this.socket.connect(new InetSocketAddress(this.ip_servidor, this.puerto_servidor), 1000);
 					in = new DataInputStream(socket.getInputStream());
-					System.out.println("El servidor ["+this.ip_servidor+":"+this.puerto_servidor+"] es el nuevo servidor primario");
+					
+					String mensaje = "agregar_socket`"+this.nickName;
+		            enviarMensaje(mensaje);
+		            System.out.println("se manda agregar socket al servidor");
+					
+		            System.out.println("El servidor ["+this.ip_servidor+":"+this.puerto_servidor+"] es el nuevo servidor primario");
 				} catch (IOException e1) {
 					//Se genera socketTimeOutException pero solo repite el mensaje de arriba
 					//Esperando al monitor...
@@ -250,9 +306,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
 				EventoNotificacionRecibido(dataArray[2]);
-				System.out.println("llega antes de vista conectado");
 				VistaConectado();
-				System.out.println("llega despues de vista conectado");
 				if(dataArray.length>3) {
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
 					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
@@ -299,6 +353,10 @@ public class Usuario implements IFuncionalidadUsuario {
 			}
 			EventoDirectorioRecibido();
 			break;
+		case "SOCKET_AGREGADO":
+			System.out.println("se agrego el socket en el servidor");
+			this.latchConexion.countDown();
+			break;
 		default:
 			System.out.println("Respuesta ("+respuesta+") desconocida");
 			break;
@@ -316,21 +374,13 @@ public class Usuario implements IFuncionalidadUsuario {
 			suscriptor.ActualizarDirectorio(this.directorio);
 		}
 	}
-
-	public void enviarRequestRegistro() throws IOException {
-        //socket.connect(new InetSocketAddress(this.ip, this.puerto_servidor), 1000);
-		DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
-		String mensajeRegistro = "Registrar" + "`" + nickName;
-		out.writeUTF(mensajeRegistro);
-		System.out.println("Se envia al servidor:"+mensajeRegistro);
-	}
 	
 	public void enviarRequestConsultaDirectorio(String nicknameConsulta) {
 		try {
-			Socket socket = new Socket();
-			InetAddress local = InetAddress.getLocalHost();
-			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			//Socket socket = new Socket();
+			//InetAddress local = InetAddress.getLocalHost();
+			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
+			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeConsulta = "CONSULTA" + "`" + nickName + "`" + nicknameConsulta;
 			System.out.println(nickName + " CONSULTA POR " + nicknameConsulta);
 			out.writeUTF(mensajeConsulta);
@@ -376,10 +426,10 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
 		try {
-			Socket socket = new Socket();
-			InetAddress local = InetAddress.getLocalHost();
-			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			//Socket socket = new Socket();
+			//InetAddress local = InetAddress.getLocalHost();
+			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
+			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
 		} catch (IOException e) {
@@ -391,10 +441,10 @@ public class Usuario implements IFuncionalidadUsuario {
 	public void notificarDesconectado() {
 		DataOutputStream out;
 		try {
-			Socket socket = new Socket();
-			InetAddress local = InetAddress.getLocalHost();
-			socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
-			out = new DataOutputStream(socket.getOutputStream());
+			//Socket socket = new Socket();
+			//InetAddress local = InetAddress.getLocalHost();
+			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
+			out = new DataOutputStream(this.socket.getOutputStream());
 			String mensaje = "DESCONEXION" + "`" + nickName;
 			out.writeUTF(mensaje);
 			System.out.println("mensaje enviado: " + mensaje);

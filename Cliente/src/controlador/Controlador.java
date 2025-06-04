@@ -20,6 +20,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import excepciones.AgotoIntentosConectarException;
+import excepciones.NoRespondePrimario;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
@@ -112,6 +113,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			//if(!Usuario.getInstancia().isConectado()) {
 			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
 			Usuario.getInstancia().Conectar();
+			//Usuario.getInstancia().esperarConexion();
 			//}
 			Usuario.getInstancia().enviarRequestRegistro();
 		} catch (AgotoIntentosConectarException e) {

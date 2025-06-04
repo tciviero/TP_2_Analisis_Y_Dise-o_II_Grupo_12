@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 public class Monitor {
 	private static Monitor instance = null;
@@ -32,6 +35,8 @@ public class Monitor {
     private Thread hiloMonitoreoPrimario=null;
     private Thread hiloMonitoreoSecundario=null;
     private boolean EstaConectadoSecundario;
+    
+    List<Socket> sockets_usuarios = new ArrayList<Socket>();
 	
 	private Monitor() {
 		this.puertoPrimario = 0;
