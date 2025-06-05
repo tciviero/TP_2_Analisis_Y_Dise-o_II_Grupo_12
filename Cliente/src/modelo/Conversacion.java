@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
-import modelo_factory.MensajeFactory;
-
 public class Conversacion implements IFuncionalidadConversacion{
 	private ArrayList<Mensaje> mensajes;
 	private int cantidadMensajesSinLeer;

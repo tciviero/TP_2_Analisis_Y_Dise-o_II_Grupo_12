@@ -1,14 +1,4 @@
-/Mensaje.class
-/MensajeDAO.class
-/DAOFactory.class
-/JSONDAOFactory.class
-/XMLDAOFactory.class
-/TextoPlanoDAOFactory.class
-/MensajeTextoPlanoDAO.class
-/MensajeJSONDAO.class
-/MensajeXMLDAO.class
 /modelo/
-/FactoryPersistencia.class
-/factory/
-/implementaciones/
-/modelo_factory/
+/excepciones/
+/controlador/
+/src/

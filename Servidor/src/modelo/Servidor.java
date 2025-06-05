@@ -16,26 +16,20 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import controlador.ControladorServidor;
 import exception.PuertoYaUsadoException;
 //import modelo.usuario.UsuarioYEstado;
 import exception.SecundarioCaidoException;
-import factory.FactoryPersistencia;
-import implementaciones.MensajeDAO;
-import modelo_factory.MensajeFactory;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	private ArrayList<Solicitud> solicitudesActuales;
-	private MensajeDAO persistencia = FactoryPersistencia.crearDAO("texto_plano");
 	
 	private Directorio directorio;
 	
@@ -102,6 +96,30 @@ public class Servidor {
             e.printStackTrace();
         }
     }
+
+    	//Responde PING ECHO en el ip puerto comun del servidor.
+/*    private void escucharPingsDelMonitor() {
+        new Thread(() -> {
+            try{ // puerto reservado solo para pings
+            	InetAddress direccion = InetAddress.getByName(ipPropio);
+                ServerSocket serverPing = new ServerSocket();
+                serverPing.bind(new InetSocketAddress(direccion, puertoMonitor));
+            	while (true) {
+                    Socket socket = serverPing.accept();
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    String mensaje = in.readUTF();
+                    if (mensaje.equalsIgnoreCase("PING")) {
+                    	System.out.println("LLEGA PING");
+                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                        out.writeUTF("ECHO");
+                    }
+                    socket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }*/ 
     
     private void iniciarEscuchaClientes() {
         new Thread(() -> {
@@ -121,6 +139,173 @@ public class Servidor {
             }
         }).start();
     }
+	
+	/*private void manejarCliente(Socket socket) {
+	    DataInputStream in = null;
+	    DataOutputStream out =null;
+	    try {
+	        in = new DataInputStream(socket.getInputStream());
+	        out = new DataOutputStream(socket.getOutputStream());
+	        String data = in.readUTF();
+	        
+	        
+	        
+	        String[] dataArray = data.split("`");
+	        String SOLICITUD = dataArray[0].toUpperCase();
+	        
+	        
+	        if(!SOLICITUD.contains("PING")) {
+	        	System.out.println("Se recibió una solicitud: " + SOLICITUD);
+	        	String nombreUsuario = null;
+		        switch (SOLICITUD) {//Solicitudes de usuario
+		        	case "AGREGAR_SOCKET":
+		        		System.out.println("entra agregar socket");
+		        		nombreUsuario = dataArray[1];
+		        		this.SocketsDeUsuarios.put(nombreUsuario, socket);
+		        		out.writeUTF("socket_agregado");
+		        		break;
+		            case "REGISTRAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		            	
+		                nombreUsuario = dataArray[1];
+		                registrar(nombreUsuario, socket);
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "COMPROBAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		            	
+		            	nombreUsuario = dataArray[1];
+		                comprobarUsuarioSesion(nombreUsuario, socket);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "INICIAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		                
+		            	nombreUsuario = dataArray[1];
+		                iniciarSesion(nombreUsuario, socket);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "ENVIAR":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+		                
+		            	nombreUsuario = dataArray[1];
+		                String Mensaje = dataArray[2];
+		                String NicknameReceptor = dataArray[3];
+		                System.out.println("ENVIANDO MENSAJE SERVIDOR");
+		                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
+		                
+		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		                EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "DESCONEXION":
+		            	this.SolicitudID=this.SolicitudID+1;
+		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+
+		            	String nickname = dataArray[1];
+		            	System.out.println("Cliente desconectado: " + nickname);
+		    	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
+		    	        if (nickname != null) {
+		    	            SocketsDeUsuarios.remove(nickname);
+		    	            this.directorio.NotificarDesconexion(nickname);
+		    	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		    	        }
+		                
+		    	        ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+		    	        EnviarDirectorioYMensajesASecundario();
+		                break;
+		            case "DIRECTORIO":
+		            	System.out.println("Se recibió el directorio");
+		            	//Llega la lista de contactos, que son solo strings con los nicknames
+						int cantidadContactos = Integer.parseInt(dataArray[1]);
+						this.directorio = new Directorio();
+						for (int i = 2; i < dataArray.length; i++) {
+							String nombre = dataArray[i];
+							i++;
+							String estado = dataArray[i];
+							//System.out.println("usuario: " + nombre + " " + estado);
+							this.directorio.agregarUsuarioEstado(nombre, estado);
+						}
+						ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		            	break;
+		            	
+		            case "SOS_PRIMARIO":
+		                //escucharPingsDelMonitor();
+		                this.soyPrimario = true;
+		                ControladorServidor.getInstance().ActualizarRolVista("Primario");
+		                break;
+		            case "SINCRONIZAR": //SINCRONIZAR`IP`PUERTO
+		            	this.SeDebeSincronizar=true;
+		            	
+		            	this.IP_Secundario = dataArray[1];
+		            	this.puertoSecundario = Integer.parseInt(dataArray[2]);
+		            	System.out.println("sincronizar con: " + this.IP_Secundario + " " + this.puertoSecundario);
+		            	EnviarDirectorioYMensajesASecundario();
+		            	break;
+		            case "ID_SOL":
+		            	AlmacenaSolicitud(Integer.parseInt(dataArray[1]),dataArray[2],dataArray);
+		            	//Se almacenan las solicitudes más recientes del servidor primario
+		            	//Por si se cae el primario saber que era lo que estaba haciendo
+		            	break;
+		            case "MENSAJES_PENDIENTES":
+		            	System.out.println("Se recibieron mensajes pendientes");
+		            	MensajesUsuario.getInstance().CargarHashMap(data);
+		            	//this.mensajesUsuario.mostrarMensajes();
+		            	ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+		            	break;
+		            case "CONSULTA":
+		            	System.out.println("Se pide buscar nickname y devolver resultados");
+		            	DevolverResultadosBusquedaNickname(dataArray[1],dataArray[2]);
+		            	break;
+		            default:
+		            	System.out.println("Solicitud (" + SOLICITUD + ") desconocida");
+		            	break;
+		        }
+		        
+		        // Se actualiza la vista del servidor después de procesar la solicitud
+		        ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+	        }else {
+    			out.writeUTF("ECHO");
+	        }
+
+	    }catch(SecundarioCaidoException e) {
+	    	if(this.soyPrimario) {
+				this.SeDebeSincronizar=false;
+				this.IP_Secundario = "";
+				this.puertoSecundario = 0;
+			}
+	    }
+	    catch (IOException e) {
+	    	InetAddress remoteAddress = socket.getInetAddress();
+            int remotePort = socket.getPort();
+            
+            InetAddress localAddress = socket.getLocalAddress();
+            int localPort = socket.getLocalPort();
+	    	System.out.println("Se deconecto IP:puerto"+remoteAddress.getHostAddress()+":"+remotePort);
+	    	
+	        /*String nombre = Servidor.getNickname(socket);
+	        System.out.println("Cliente desconectado: " + nombre);
+	        
+	        // Si el cliente se desconectó inesperadamente, quitamos el socket de la lista
+	        if (nombre != null) {
+	            SocketsDeUsuarios.remove(nombre);
+	            this.directorio.NotificarDesconexion(nombre);
+	            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+	        }
+	    }
+	}*/
     
     private void manejarCliente(Socket socket) {
         try (DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -171,7 +356,7 @@ public class Servidor {
     		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
     		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
     		                EnviarDirectorioYMensajesASecundario();
-    		    			break;
+    		                break;
     		            case "ENVIAR":
     		            	this.SolicitudID=this.SolicitudID+1;
     		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
@@ -185,10 +370,6 @@ public class Servidor {
     		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
     		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
     		                EnviarDirectorioYMensajesASecundario();
-    		                
-    		                //contenido, emisor, receptor
-    		            	MensajeFactory mensaje_guardar = new MensajeFactory(Mensaje,nombreUsuario,NicknameReceptor);
-    		            	persistencia.guardarMensaje(mensaje_guardar);
     		                break;
     		            case "DESCONEXION":
     		            	this.SolicitudID=this.SolicitudID+1;
@@ -440,21 +621,8 @@ public class Servidor {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion " + nickname);
 		
-		//debe recibir todo el historial del usuario que se conecto
-        List<MensajeFactory> historial_mensaje_usuario = persistencia.cargarMensajes(nickname);
-        //debe recorrer la lista y cargarle los mensajes donde sea emisor o receptor.
-        String mensaje_aux = "";
-        int cant = 0;
-        String mensaje_historial = "";
-        for (MensajeFactory mensaje : historial_mensaje_usuario) {
-        	mensaje_historial = mensaje_historial + "`" + mensaje.getEmisor() + "`" + mensaje.getReceptor() + "`" + mensaje.getContenido();
-        	//System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje.getContenido());
-        	cant++;
-        }
-		mensaje_enviar = mensaje_enviar + "`HISTORIAL`" + cant + mensaje_historial;
-		out.writeUTF(mensaje_enviar);
-		//mensajes recibidos mientras estuvo desconectado
-		/*String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
+		
+		String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
 		// mensaje tiene una estructura similar a esto: 
 		//mensaje= "HISTORIAL`cantMensajes`emisor`mensaje`...." 
 		//lo tengo que sacar del historial
@@ -465,7 +633,7 @@ public class Servidor {
 			out.writeUTF(mensaje_enviar);
 		}else {
 			out.writeUTF(mensaje_enviar);
-		}*/
+		}
 	}
 
 	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {

@@ -4,6 +4,5 @@
 	<classpathentry kind="src" path="Cliente/src"/>
 	<classpathentry kind="src" path="Servidor/src"/>
 	<classpathentry kind="src" path="Monitor"/>
-	<classpathentry kind="src" path="Persistencia"/>
 	<classpathentry kind="output" path="Cliente/bin"/>
 </classpath>
