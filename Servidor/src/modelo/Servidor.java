@@ -179,9 +179,8 @@ public class Servidor {
     		            	nombreUsuario = dataArray[1];
     		                String Mensaje = dataArray[2];
     		                String NicknameReceptor = dataArray[3];
-    		                String algoritmoEncriptacion = dataArray[4];
     		                System.out.println("ENVIANDO MENSAJE SERVIDOR");
-    		                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor, algoritmoEncriptacion);
+    		                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
     		                
     		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
     		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
@@ -369,13 +368,13 @@ public class Servidor {
 	}
 
 //------------COMUNICACION CON CLIENTES------------
-	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor, String algoritmoEncriptacion) throws IOException {
+	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
 		Socket socket_receptor = getSocket(nick_receptor);
 				
 		if(this.directorio.usuarioEstaConectado(nick_receptor)) { //si esta conectado lo envia
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
-			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje + "`" + algoritmoEncriptacion;
+			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje;
 			System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje_enviar);
 			out.flush();
 			out.writeUTF(mensaje_enviar);
