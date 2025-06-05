@@ -35,7 +35,7 @@ public class Servidor {
 	//private ServerSocket serverSocket;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	private ArrayList<Solicitud> solicitudesActuales;
-	private MensajeDAO persistencia = FactoryPersistencia.crearDAO("texto_plano");
+	private MensajeDAO persistencia = FactoryPersistencia.crearDAO("json");
 	
 	private Directorio directorio;
 	

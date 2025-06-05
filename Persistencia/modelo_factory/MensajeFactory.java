@@ -14,6 +14,13 @@ public class MensajeFactory {
 		this.emisor = emisor;
 		this.receptor = receptor;
 	}
+	
+	public MensajeFactory(String contenido, String hora, String emisor, String receptor) {
+		this.contenido = contenido;
+		this.fecha = hora;
+		this.emisor = emisor;
+		this.receptor = receptor;
+	}
 
 	public MensajeFactory() {
 	}
