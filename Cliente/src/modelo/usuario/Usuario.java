@@ -18,12 +18,15 @@ import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
+import modelo.Cifrado.CifradorFactory;
+import modelo.Cifrado.ICifrador;
 import modelo.Contacto.Contacto;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
 	private static Usuario instancia = null;
-
+	private final String clave = "ARROYO RIO AGUA";
+	
 	private final int puerto_monitor = 8888;
 	private int puerto;
 	private String nickName,ip;
@@ -288,6 +291,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	private void suich(String respuesta,String[] dataArray) {
+		System.out.println("RESPUESTA = " + respuesta);
 		switch(respuesta) {
 		case "RES-REGISTRO":
 			if(dataArray[1].equalsIgnoreCase("OK")) {
@@ -338,10 +342,11 @@ public class Usuario implements IFuncionalidadUsuario {
 			}
 			break;
 		case "RECIBIR":
-			String nicknameEmisor=dataArray[1];
-			String mensaje=dataArray[2];
-			NuevoMensajeRecibido(nicknameEmisor,mensaje);
-			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje);
+			String nicknameEmisor = dataArray[1];
+			String mensaje = dataArray[2];
+			String algoritmoEncriptacion = dataArray[3];
+			NuevoMensajeRecibido(nicknameEmisor,mensaje, algoritmoEncriptacion);
+			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -429,14 +434,26 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
 		try {
-			//Socket socket = new Socket();
-			//InetAddress local = InetAddress.getLocalHost();
-			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void enviarRequestMensaje(String mensaje, String destinatario, String algoritmoEncriptacion) {
+		try {
+			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+			ICifrador cifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+			String mensajeEncriptado = cifrador.cifrarMensaje(mensaje, clave);
+			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensajeEncriptado + "`" + destinatario + "`" + algoritmoEncriptacion;
+			out.writeUTF(mensajeRegistro);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -462,25 +479,19 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	@Override
-	public void NuevoMensajeRecibido(String Emisor,String Receptor, String texto) {
-		//cuando el emisor es nickname 
-		System.out.println("AAAAA: recibimos mensaje:"+texto);
-		if(Receptor.equalsIgnoreCase(this.nickName)) {
-			Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
-			c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
-		}else {
-			Conversacion c = getConversacion(Receptor);
-			c.addMensaje(Emisor, texto, false);			
-		}
-		EventoNuevoMensajeRecibido();
-	}
-	
-
-	public void NuevoMensajeRecibido(String Emisor, String texto) {
-		System.out.println("AAAAA: recibimos mensaje:"+texto);
+	public void NuevoMensajeRecibido(String Emisor, String texto, String algoritmoEncriptacion) {
+		try {
+		System.out.println("Recibimos mensaje: " + texto);
+		ICifrador decifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+		String textoDecifrado = decifrador.descifrarMensaje(texto, clave);
+		System.out.println("Mensaje decifrado: " + textoDecifrado);
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
-		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
+		c.addMensaje(Emisor, textoDecifrado, false);			//Agregamos el mensaje ajeno
 		EventoNuevoMensajeRecibido();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	

@@ -167,7 +167,7 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		if(!msg.equalsIgnoreCase("")) {
 			Conversacion actual= vista.getConversacionAbierta();
 			if(actual!=null) {
-				Usuario.getInstancia().enviarRequestMensaje(msg, actual.getNickName());
+				Usuario.getInstancia().enviarRequestMensaje(msg, actual.getNickName(), "AES");
 				actual.addMensaje(Usuario.getInstancia().getNickName(), msg, true);
 				actual.SetCantidadMensajesSinLeer(0);
 				vista.setTecladoText("");
