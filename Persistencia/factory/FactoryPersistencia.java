@@ -6,14 +6,14 @@ import implementaciones.MensajeTextoPlanoDAO;
 import implementaciones.MensajeXMLDAO;
 
 public class FactoryPersistencia {
-	public static MensajeDAO crearDAO(String tipo) {
+	public static MensajeDAO crearDAO(String tipo, String nombreUsuario) {
 		switch (tipo.toLowerCase()) {
-		case "texto_plano":
-			return new MensajeTextoPlanoDAO();
+		case "texto":
+			return new MensajeTextoPlanoDAO(nombreUsuario);
 		case "json":
-			return new MensajeJSONDAO();
+			return new MensajeJSONDAO(nombreUsuario);
 		case "xml":
-			return new MensajeXMLDAO();
+			return new MensajeXMLDAO(nombreUsuario);
 		default:
 			throw new IllegalArgumentException("Formato de persistencia no soportado: " + tipo);
 		}

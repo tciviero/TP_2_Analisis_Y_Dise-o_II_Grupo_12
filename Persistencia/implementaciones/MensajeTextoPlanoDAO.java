@@ -12,7 +12,11 @@ import modelo_factory.MensajeFactory;
 
 public class MensajeTextoPlanoDAO implements MensajeDAO {
 
-	private static final String ARCHIVO = "mensajes_texto_plano.txt";
+	private String ARCHIVO;
+	
+	public MensajeTextoPlanoDAO(String nombreUsuario) {
+		this.ARCHIVO = "historial_texto_" + nombreUsuario;
+	}
 
 	@Override
 	public void guardarMensaje(MensajeFactory mensaje) {

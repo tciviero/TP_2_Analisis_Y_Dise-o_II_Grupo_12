@@ -2,5 +2,5 @@ package factory;
 import implementaciones.MensajeDAO;
 
 public interface DAOFactory {
-	MensajeDAO crearMensajeDAO();
+	MensajeDAO crearMensajeDAO(String nombreUsuario);
 }

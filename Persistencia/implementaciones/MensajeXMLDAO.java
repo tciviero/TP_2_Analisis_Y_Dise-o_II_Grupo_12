@@ -26,8 +26,12 @@ import modelo_factory.MensajeFactory;
 
 public class MensajeXMLDAO implements MensajeDAO {
 	
-	private static final String ARCHIVO = "mensajes_xml.xml";
+	private String ARCHIVO;
 	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+	
+	public MensajeXMLDAO(String nombreUsuario) {
+		this.ARCHIVO = "historial_xml_" + nombreUsuario;
+	}
 
 	@Override
 	public void guardarMensaje(MensajeFactory mensaje) {

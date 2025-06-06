@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import controlador.Controlador;
@@ -16,9 +17,12 @@ import excepciones.AgotoIntentosConectarException;
 import excepciones.NoRespondePrimario;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
+import factory.FactoryPersistencia;
+import implementaciones.MensajeDAO;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
 import modelo.Contacto.Contacto;
+import modelo_factory.MensajeFactory;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
@@ -34,12 +38,15 @@ public class Usuario implements IFuncionalidadUsuario {
 	private int intentosConectar;
 	private ArrayList<INotificable> suscriptores;
 	
+	private MensajeDAO persistencia;// = FactoryPersistencia.crearDAO("json");
+	
 	public boolean estaConectado = false;
 
 	private String ip_servidor;
 	private int puerto_servidor;
 	private Socket socket;	//con el socket se comunica con el servidor
 	//private ServerSocket serverSocket;
+	private String metodo_persistencia;
 	CountDownLatch latchConexion;
 	
 	private Usuario() {
@@ -293,6 +300,11 @@ public class Usuario implements IFuncionalidadUsuario {
 			if(dataArray[1].equalsIgnoreCase("OK")) {
 				System.out.println("Usuario registrado exitosamente");
 				this.estaConectado = true;
+				
+				//String nombre_archivo = this.nickName + "_json";
+				
+				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
+				
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
 			}
@@ -303,26 +315,17 @@ public class Usuario implements IFuncionalidadUsuario {
 			break;
 		case "RES-INICIO":
 			if(dataArray[1].equalsIgnoreCase("OK")) {
+				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
-				EventoNotificacionRecibido(dataArray[2]); //revisar esto
-				VistaConectado();
-				if(dataArray.length>4) {
-					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
-					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
-						String emisor,receptor,mensaje;
-						int aux = 5;
-						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
-							emisor = dataArray[aux];
-							receptor = dataArray[aux+1];
-							mensaje = dataArray[aux+2];
-							aux += 3;
-							System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
-							//mensajes que mandamos o recibimos
-							NuevoMensajeRecibido(emisor,receptor,mensaje);
-						}
-					}
+				
+				List<MensajeFactory> mensajes_cargados = this.persistencia.cargarMensajes(this.nickName);
+				for (MensajeFactory mensaje_leido : mensajes_cargados) {
+					NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensaje_leido.getContenido());
 				}
+				
+				EventoNotificacionRecibido(dataArray[2]);
+				VistaConectado();
 			}
 			else {
 				System.out.println("Error de Inicio:"+dataArray[2]);
@@ -342,6 +345,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			String mensaje=dataArray[2];
 			NuevoMensajeRecibido(nicknameEmisor,mensaje);
 			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje);
+			
+			MensajeFactory mensaje_guardar = new MensajeFactory(mensaje,nicknameEmisor,this.nickName);
+			this.persistencia.guardarMensaje(mensaje_guardar);
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -364,8 +370,11 @@ public class Usuario implements IFuncionalidadUsuario {
 			System.out.println("Respuesta ("+respuesta+") desconocida");
 			break;
 		}
-
 		
+	}
+	
+	public void setearMetodoPersistencia(String metodo) {
+		this.metodo_persistencia = metodo;
 	}
 
 	/*public boolean isConectado() {
@@ -435,6 +444,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
+			
+			MensajeFactory mensaje_enviar = new MensajeFactory(mensaje, this.nickName, destinatario);
+			this.persistencia.guardarMensaje(mensaje_enviar);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

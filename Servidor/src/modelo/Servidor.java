@@ -27,15 +27,11 @@ import controlador.ControladorServidor;
 import exception.PuertoYaUsadoException;
 //import modelo.usuario.UsuarioYEstado;
 import exception.SecundarioCaidoException;
-import factory.FactoryPersistencia;
-import implementaciones.MensajeDAO;
-import modelo_factory.MensajeFactory;
 
 public class Servidor {
 	//private ServerSocket serverSocket;
 	private static HashMap<String,Socket> SocketsDeUsuarios;
 	private ArrayList<Solicitud> solicitudesActuales;
-	private MensajeDAO persistencia = FactoryPersistencia.crearDAO("json");
 	
 	private Directorio directorio;
 	
@@ -185,10 +181,7 @@ public class Servidor {
     		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
     		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
     		                EnviarDirectorioYMensajesASecundario();
-    		                
-    		                //contenido, emisor, receptor
-    		            	MensajeFactory mensaje_guardar = new MensajeFactory(Mensaje,nombreUsuario,NicknameReceptor);
-    		            	persistencia.guardarMensaje(mensaje_guardar);
+
     		                break;
     		            case "DESCONEXION":
     		            	this.SolicitudID=this.SolicitudID+1;
@@ -439,19 +432,7 @@ public class Servidor {
 		ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion " + nickname);
-		
-		//debe recibir todo el historial del usuario que se conecto
-        List<MensajeFactory> historial_mensaje_usuario = persistencia.cargarMensajes(nickname);
-        //debe recorrer la lista y cargarle los mensajes donde sea emisor o receptor.
-        String mensaje_aux = "";
-        int cant = 0;
-        String mensaje_historial = "";
-        for (MensajeFactory mensaje : historial_mensaje_usuario) {
-        	mensaje_historial = mensaje_historial + "`" + mensaje.getEmisor() + "`" + mensaje.getReceptor() + "`" + mensaje.getContenido();
-        	//System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje.getContenido());
-        	cant++;
-        }
-		mensaje_enviar = mensaje_enviar + "`HISTORIAL`" + cant + mensaje_historial;
+		//mensaje_enviar += "`no_tuvo";
 		out.writeUTF(mensaje_enviar);
 		//mensajes recibidos mientras estuvo desconectado
 		/*String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);

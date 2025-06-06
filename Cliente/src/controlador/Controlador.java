@@ -15,6 +15,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -27,19 +29,21 @@ import modelo.Conversacion;
 import modelo.IVerConversacion;
 import modelo.Contacto.Contacto;
 import modelo.usuario.IFuncionalidadUsuario;
+import modelo.usuario.MetodoPersistenciaUsuarios;
 import modelo.usuario.Usuario;
 import modelo.usuario.UsuarioYEstado;
 import vista.VentanaChat;
+import vista.VistaMetodoPersistencia;
 
 public class Controlador implements ActionListener, ListSelectionListener{
 	IFuncionalidadUsuario usuario = Usuario.getInstancia();
 	private IVista vista;
 	private static Controlador instance = null;
+	private VistaMetodoPersistencia vistaMetodoPersistencia = new VistaMetodoPersistencia();
 	
 	private String IP_Usuario = null;
 	
 	private Controlador() {
-		
 	}
 	
 	public static Controlador getInstance() {
@@ -60,15 +64,9 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		Usuario.getInstancia().notificarDesconectado();
 	}
 	
-	
 	public IVista getVista(){
 		return this.vista;
 	}
-	
-	/*private void DireccionYPuertoEnUso(String ip,int puerto) throws BindException,IllegalArgumentException, IOException {
-        ServerSocket socket = new ServerSocket(puerto);
-		socket.close();
-	}*/
 	
 	public void UsuarioExistente(String ip, int puerto) throws IOException {
 		try(Socket socket = new Socket()){
@@ -110,11 +108,15 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		String nombre = this.vista.getNickNameUsuarioText();
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		try {
-			//if(!Usuario.getInstancia().isConectado()) {
+			String metodo = this.vistaMetodoPersistencia.pedirMetodoPersistencia();
+			MetodoPersistenciaUsuarios.get_instance().guardarUsuarioEnArchivo(nombre, metodo);
+			
+			System.out.println("metodo elegido: " + metodo);
 			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
 			Usuario.getInstancia().Conectar();
-			//Usuario.getInstancia().esperarConexion();
-			//}
+			
+			Usuario.getInstancia().setearMetodoPersistencia(metodo);
+			
 			Usuario.getInstancia().enviarRequestRegistro();
 		} catch (AgotoIntentosConectarException e) {
 			this.vista.onFalloConectarServidor();
@@ -129,9 +131,13 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		
 		try {
+			MetodoPersistenciaUsuarios.get_instance().cargarDesdeArchivo();
+			String metodo_seleccionado = MetodoPersistenciaUsuarios.get_instance().buscarMetodoUsuario(nombre);
+			System.out.println("metodo que eligio: " + metodo_seleccionado);
+			Usuario.getInstancia().setearMetodoPersistencia(metodo_seleccionado);
 			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
-			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
 			//ahora toca iniciar sesion
+			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
 			Usuario.getInstancia().iniciarSesion(nombre);
 		} catch (AgotoIntentosConectarException e) {
 			this.vista.onFalloConectarServidor();

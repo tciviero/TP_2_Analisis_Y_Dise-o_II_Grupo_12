@@ -14,7 +14,11 @@ import java.util.List;
 import modelo_factory.MensajeFactory;
 
 public class MensajeJSONDAO implements MensajeDAO {
-    private static final String ARCHIVO = "mensajes_json.json";
+    private String ARCHIVO;
+    
+    public MensajeJSONDAO(String nombreUsuario) {
+		this.ARCHIVO = "historial_json_" + nombreUsuario;
+	}
 
 	@Override
 	public void guardarMensaje(MensajeFactory mensaje) {
