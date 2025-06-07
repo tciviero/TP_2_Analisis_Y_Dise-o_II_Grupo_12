@@ -323,6 +323,26 @@ public class Usuario implements IFuncionalidadUsuario {
 				for (MensajeFactory mensaje_leido : mensajes_cargados) {
 					NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensaje_leido.getContenido());
 				}
+				//persistir los pendientes 
+				if(dataArray.length>3) {
+					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
+					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
+						String emisor,mensaje;
+						int aux = 5;
+						MensajeFactory mensaje_pendiente_persistir;
+						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
+							emisor = dataArray[aux];
+							mensaje = dataArray[aux+1];
+							aux += 2;
+							System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
+							//contenido hora emisor receptor
+							//arreglar la hora
+							mensaje_pendiente_persistir = new MensajeFactory(mensaje,emisor,this.nickName);
+							this.persistencia.guardarMensaje(mensaje_pendiente_persistir);
+							NuevoMensajeRecibido(emisor,mensaje);
+						}
+					}
+				}
 				
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();

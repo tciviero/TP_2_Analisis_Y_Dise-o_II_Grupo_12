@@ -1,3 +1,2 @@
-tete:xml
-dede:json
-teo:texto
+tete:texto
+dede:texto

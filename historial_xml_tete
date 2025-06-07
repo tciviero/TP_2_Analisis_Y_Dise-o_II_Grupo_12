@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mensajes_xml>
+                    
+    
+    
+    
+    <mensaje>
+                                        
+        
+        
+        
+        <emisor>tete</emisor>
+                                        
+        
+        
+        
+        <receptor>dede</receptor>
+                                        
+        
+        
+        
+        <contenido>hola1</contenido>
+                                        
+        
+        
+        
+        <hora>14:26:02</hora>
+                                    
+    
+    
+    
+    </mensaje>
+                
+    
+    
+    
+    <mensaje>
+                                
+        
+        
+        <emisor>dede</emisor>
+                                
+        
+        
+        <receptor>tete</receptor>
+                                
+        
+        
+        <contenido>te respondo2</contenido>
+                                
+        
+        
+        <hora>14:26:07</hora>
+                            
+    
+    
+    </mensaje>
+            
+    
+    
+    <mensaje>
+                        
+        
+        <emisor>tete</emisor>
+                        
+        
+        <receptor>dede</receptor>
+                        
+        
+        <contenido>post desconexion3</contenido>
+                        
+        
+        <hora>14:26:16</hora>
+                    
+    
+    </mensaje>
+        
+    
+    <mensaje>
+                
+        <emisor>tete</emisor>
+                
+        <receptor>dede</receptor>
+                
+        <contenido>test4</contenido>
+                
+        <hora>14:26:19</hora>
+            
+    </mensaje>
+    
+    <mensaje>
+        <emisor>tete</emisor>
+        <receptor>dede</receptor>
+        <contenido>holaaa5</contenido>
+        <hora>14:26:23</hora>
+    </mensaje>
+</mensajes_xml>

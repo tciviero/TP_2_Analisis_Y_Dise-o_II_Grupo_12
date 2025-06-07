@@ -435,9 +435,8 @@ public class Servidor {
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		System.out.println("se inicia sesion " + nickname);
 		//mensaje_enviar += "`no_tuvo";
-		out.writeUTF(mensaje_enviar);
 		//mensajes recibidos mientras estuvo desconectado
-		/*String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
+		String mensaje = MensajesUsuario.getInstance().historial_mensajes_recibidos(nickname);
 		// mensaje tiene una estructura similar a esto: 
 		//mensaje= "HISTORIAL`cantMensajes`emisor`mensaje`...." 
 		//lo tengo que sacar del historial
@@ -448,7 +447,7 @@ public class Servidor {
 			out.writeUTF(mensaje_enviar);
 		}else {
 			out.writeUTF(mensaje_enviar);
-		}*/
+		}
 	}
 
 	private void comprobarUsuarioSesion(String nickname, Socket socket) throws IOException {
