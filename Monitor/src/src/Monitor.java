@@ -11,13 +11,14 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+
+import src.state.*;
 
 public class Monitor {
 	private static Monitor instance = null;
@@ -35,6 +36,8 @@ public class Monitor {
     private Thread hiloMonitoreoPrimario=null;
     private Thread hiloMonitoreoSecundario=null;
     private boolean EstaConectadoSecundario;
+    
+    private EstadoMonitor estadoActual = new EstadoSinServidores();
     
     List<Socket> sockets_usuarios = new ArrayList<Socket>();
 	
@@ -116,66 +119,71 @@ public class Monitor {
                }
             }else if (comando.equalsIgnoreCase("servidor_conectado")) {
                 synchronized (this) {
-                    if (puertoPrimario == 0) {
-                        this.ip_primario = dataArray[1];
-                        this.puertoPrimario = Integer.parseInt(dataArray[2]);
-                    	this.primario.setIp(ip_primario);
-                    	this.primario.setPuerto(puertoPrimario);
-                        System.out.println("Servidor designado como PRIMARIO " + ip_primario + " puerto: " + puertoPrimario);
-                       
-                        out.writeUTF("sos_primario");
-                        System.out.println("Se envia sos_primario");
-                        // hilo de monitoreo
-                        if(this.hiloMonitoreoPrimario==null) {
-                        	this.hiloMonitoreoPrimario=new Thread(this::monitorearPrimario);
-                        	this.hiloMonitoreoPrimario.start();
-                        }
-                        else {
-                        	this.hiloMonitoreoPrimario.interrupt();
-                        	this.hiloMonitoreoPrimario=new Thread(this::monitorearPrimario);
-                        	this.hiloMonitoreoPrimario.start();
-                        }
-                        
-                        
-                    } else if (puertoSecundario == 0) {
-                    	this.ip_secundario = dataArray[1];
-                    	this.puertoSecundario = Integer.parseInt(dataArray[2]);
-                    	this.secundario.setIp(ip_secundario);
-                    	this.secundario.setPuerto(puertoSecundario);
-                    	
-                        System.out.println("Servidor designado como SECUNDARIO " + ip_secundario + " puerto: " + puertoSecundario);
-                        out.writeUTF("sos_secundario");
-                        //mando a sincronizar al principal con el secundario recien conectado
-                        Socket socket_prin = new Socket(ip_primario, puertoPrimario);
-                        DataOutputStream out_prin = new DataOutputStream(socket_prin.getOutputStream());
-                        out_prin.writeUTF("SINCRONIZAR`"+ip_secundario+"`"+puertoSecundario);
-                        out_prin.flush();
-                        //sincronizar
-                        //le tengo que avisar al primario que sincronice con el secundario
-                        //despues lo que pasa por el primario lo tiene que pasar al secundario
-                        
-                        if(this.hiloMonitoreoSecundario==null) {
-                        	this.hiloMonitoreoSecundario=new Thread(this::monitorearSecundario);
-                        	this.hiloMonitoreoSecundario.start();
-                        }
-                        else {
-                        	if(this.hiloMonitoreoSecundario.isAlive()) {
-                        		
-                        	}else {
-                        		//this.hiloMonitoreoSecundario.interrupt();
-                        		//this.hiloMonitoreoSecundario.stop();
-                        		//this.hiloMonitoreoSecundario.suspend();
-                        		//this.hiloMonitoreoSecundario=new Thread(this::monitorearSecundario);
-                        		this.hiloMonitoreoSecundario.start();
-                        	}
-                        }                        
-                    } else {
-                        out.writeUTF("ya_hay_dos_servidores");
-                    }
+                	this.estadoActual.manejarServidorConectado(dataArray[1], Integer.parseInt(dataArray[2]), instance, out);
                 }
             }
         } catch (IOException e) {
             System.err.println("Error manejando cliente en el monitor: " + e.getMessage());
+        }
+    }
+    
+    public void setEstado(EstadoMonitor nuevoEstado) {
+        this.estadoActual = nuevoEstado;
+    }
+    
+    public void setearPrimario(String ip_primario,int puerto_primario) {
+    	this.ip_primario = ip_primario;
+        this.puertoPrimario = puerto_primario;
+    	this.primario.setIp(ip_primario);
+    	this.primario.setPuerto(puertoPrimario);
+    }
+    
+    public void setearSecundario(String ip_secundario,int puerto_secundario) {
+    	this.ip_secundario = ip_secundario;
+        this.puertoSecundario = puerto_secundario;
+    	this.secundario.setIp(ip_secundario);
+    	this.secundario.setPuerto(puerto_secundario);
+    }
+    
+    public void sincronizarPrimarioConSecundario() {
+		try {
+			Socket socket_prin = new Socket(ip_primario, puertoPrimario);
+			DataOutputStream out_prin = new DataOutputStream(socket_prin.getOutputStream());
+	        out_prin.writeUTF("SINCRONIZAR`"+ip_secundario+"`"+puertoSecundario);
+	        out_prin.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public void iniciarHiloMonitoreoSecundario() {
+    	if(this.hiloMonitoreoSecundario==null) {
+        	this.hiloMonitoreoSecundario=new Thread(this::monitorearSecundario);
+        	this.hiloMonitoreoSecundario.start();
+        }
+        else {
+        	if(this.hiloMonitoreoSecundario.isAlive()) {
+        		
+        	}else {
+        		//this.hiloMonitoreoSecundario.interrupt();
+        		//this.hiloMonitoreoSecundario.stop();
+        		//this.hiloMonitoreoSecundario.suspend();
+        		//this.hiloMonitoreoSecundario=new Thread(this::monitorearSecundario);
+        		this.hiloMonitoreoSecundario.start();
+        	}
+        }
+    }
+    
+    public void iniciarHiloMonitoreoPrimario() {
+    	if(this.hiloMonitoreoPrimario==null) {
+        	this.hiloMonitoreoPrimario=new Thread(this::monitorearPrimario);
+        	this.hiloMonitoreoPrimario.start();
+        }
+        else {
+        	this.hiloMonitoreoPrimario.interrupt();
+        	this.hiloMonitoreoPrimario=new Thread(this::monitorearPrimario);
+        	this.hiloMonitoreoPrimario.start();
         }
     }
 
@@ -195,18 +203,13 @@ public class Monitor {
                 	LocalDateTime ping = LocalDateTime.now();
                 	this.secundario.setLastPing(true);
                 	this.EstaConectadoSecundario=true;
-                }
-                else {
+                }else {
                 	//this.EstaConectadoSecundario=false;
                 	//this.puertoSecundario=0;
                 }
             } catch (IOException e) {
-                //Se cae el secundario
-            	this.EstaConectadoSecundario=false;
-            	this.puertoSecundario=0;
-            	this.secundario.setPuerto(0);
-            	this.secundario.setLastPing(false);
-                //System.out.println("servidor secundario Caido ["+ping.format(formato)+"]");
+                this.estadoActual.caeSecundario(instance);
+                System.out.println("servidor secundario caido");
             }
             ActualizaServidores();
             try {
@@ -216,6 +219,13 @@ public class Monitor {
                 	e.printStackTrace();
             }
         }
+    }
+    
+    public void setearSecundarioCaido() {
+    	this.EstaConectadoSecundario=false;
+    	this.puertoSecundario=0;
+    	this.secundario.setPuerto(0);
+    	this.secundario.setLastPing(false);
     }
     
     private void monitorearPrimario() {
@@ -234,27 +244,21 @@ public class Monitor {
                 	this.primario.setLastPing(true);
                 }
             } catch (IOException e) {
-                //e.printStackTrace();
             	System.out.println("Primario no responde. Promoviendo secundario...");
-                this.puertoPrimario = 0;
-                this.primario.setLastPing(false);
-            	if(this.puertoSecundario!=0) {
-                	promoverSecundario();
-                }else {
-                	System.out.println("no hay ningun secundario para promover");
-                	break;
-                }
+            	this.puertoPrimario = 0;
+            	this.primario.setLastPing(false);
+            	this.estadoActual.caePrimario(instance);
             }
             ActualizaServidores();
             try {
-                Thread.sleep(5000); // Esperar 5 segundos antes del próximo ping
+                Thread.sleep(5000); // Esperar 5 segundos antes del proximo ping
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void promoverSecundario() {
+    public void promoverSecundario() {
         try (Socket socket = new Socket(ip_secundario, puertoSecundario)) {
         	this.ip_primario = ip_secundario;
         	this.puertoPrimario = puertoSecundario;
@@ -262,6 +266,7 @@ public class Monitor {
         	this.primario.setPuerto(puertoSecundario);
         	this.secundario.setPuerto(0);
         	this.secundario.setIp(null);
+        	this.EstaConectadoSecundario=false;
         	ActualizaServidores();
         	this.puertoSecundario = 0;
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
