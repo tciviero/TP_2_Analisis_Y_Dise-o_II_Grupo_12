@@ -25,7 +25,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	private static Usuario instancia = null;
 
 	private final int puerto_monitor = 8888;
-	private int puerto;
 	private String nickName,ip;
 
 	private ArrayList<Contacto> agenda;
@@ -78,8 +77,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		return instancia;
 	}
 	
-	public void Iniciar(String Nombre, String ip, int puerto) {
-		this.puerto = puerto;
+	public void Iniciar(String Nombre, String ip) {
 		this.ip = ip;
 		this.nickName = Nombre;
 		this.agenda = new ArrayList<Contacto>();
@@ -440,17 +438,19 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public void notificarDesconectado() {
 		DataOutputStream out;
-		try {
-			//Socket socket = new Socket();
-			//InetAddress local = InetAddress.getLocalHost();
-			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
-			out = new DataOutputStream(this.socket.getOutputStream());
-			String mensaje = "DESCONEXION" + "`" + nickName;
-			out.writeUTF(mensaje);
-			System.out.println("mensaje enviado: " + mensaje);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(this.socket != null) {
+			try {
+				//Socket socket = new Socket();
+				//InetAddress local = InetAddress.getLocalHost();
+				//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
+				out = new DataOutputStream(this.socket.getOutputStream());
+				String mensaje = "DESCONEXION" + "`" + nickName;
+				out.writeUTF(mensaje);
+				System.out.println("mensaje enviado: " + mensaje);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -475,9 +475,6 @@ public class Usuario implements IFuncionalidadUsuario {
 		return nickName;
 	}
 
-	public int getPuerto() {
-		return puerto;
-	}
 
 	public String getIp() {
 		return ip;
@@ -501,8 +498,8 @@ public class Usuario implements IFuncionalidadUsuario {
 
 
 	@Override
-	public void conectar(String nombre, String ip, int puerto) throws IOException {
-		Iniciar(nombre, ip, puerto);
+	public void conectar(String nombre, String ip) throws IOException {
+		Iniciar(nombre, ip);
 	}
 //--- Conversaciones
 	

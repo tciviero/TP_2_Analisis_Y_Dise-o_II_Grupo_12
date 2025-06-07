@@ -65,10 +65,6 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		return this.vista;
 	}
 	
-	/*private void DireccionYPuertoEnUso(String ip,int puerto) throws BindException,IllegalArgumentException, IOException {
-        ServerSocket socket = new ServerSocket(puerto);
-		socket.close();
-	}*/
 	
 	public void UsuarioExistente(String ip, int puerto) throws IOException {
 		try(Socket socket = new Socket()){
@@ -108,10 +104,9 @@ public class Controlador implements ActionListener, ListSelectionListener{
 
 	private void registrar() {
 		String nombre = this.vista.getNickNameUsuarioText();
-		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
 		try {
 			//if(!Usuario.getInstancia().isConectado()) {
-			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+			Usuario.getInstancia().Iniciar(nombre, IP_Usuario);
 			Usuario.getInstancia().Conectar();
 			//Usuario.getInstancia().esperarConexion();
 			//}
@@ -126,10 +121,8 @@ public class Controlador implements ActionListener, ListSelectionListener{
 
 	private void comprobarInicioSesion() {
 		String nombre = this.vista.getNickNameUsuarioText();
-		int puerto = Integer.parseInt(vista.getPuertoUsuarioText());
-		
 		try {
-			Usuario.getInstancia().Iniciar(nombre, IP_Usuario, puerto);
+			Usuario.getInstancia().Iniciar(nombre, IP_Usuario);
 			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
 			//ahora toca iniciar sesion
 			Usuario.getInstancia().iniciarSesion(nombre);

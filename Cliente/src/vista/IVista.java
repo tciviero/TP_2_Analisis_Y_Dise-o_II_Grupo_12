@@ -15,7 +15,6 @@ public interface IVista extends INotificable{
 	String getSearchText();
 	String getNickNameUsuarioText();
 	String getTecladoText();
-	String getPuertoUsuarioText();
 	void setTecladoText(String text);
 	
 	public UsuarioYEstado getUsuarioSeleccionado();

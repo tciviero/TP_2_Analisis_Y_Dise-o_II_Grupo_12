@@ -372,6 +372,7 @@ public class Servidor {
     		                EnviarDirectorioYMensajesASecundario();
     		                break;
     		            case "DESCONEXION":
+    		            	System.out.println("DESCONECTADO!");
     		            	this.SolicitudID=this.SolicitudID+1;
     		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
 
@@ -449,6 +450,7 @@ public class Servidor {
 			}
 	    }
 	    catch (IOException e) {
+	    	e.printStackTrace();
 	    	InetAddress remoteAddress = socket.getInetAddress();
             int remotePort = socket.getPort();
             
