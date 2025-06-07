@@ -201,7 +201,7 @@ public class Monitor {
                 	//this.puertoSecundario=0;
                 }
             } catch (IOException e) {
-                //Se caé el secundario
+                //Se cae el secundario
             	this.EstaConectadoSecundario=false;
             	this.puertoSecundario=0;
             	this.secundario.setPuerto(0);
@@ -210,7 +210,7 @@ public class Monitor {
             }
             ActualizaServidores();
             try {
-                Thread.sleep(5000); // Esperar 5 segundos antes del próximo ping
+                Thread.sleep(5000); // Esperar 5 segundos antes del proximo ping
             } catch (InterruptedException e) {
             	//Thread.currentThread().interrupt();
                 	e.printStackTrace();
@@ -271,9 +271,6 @@ public class Monitor {
             System.err.println("Error al promover al secundario: " + e.getMessage());
         }
     }
-
-
-
     
     public static String crearIP() {
 		InetAddress addr = null;

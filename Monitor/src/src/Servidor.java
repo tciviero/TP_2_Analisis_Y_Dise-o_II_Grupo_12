@@ -28,8 +28,6 @@ public class Servidor {
 		return puerto;
 	}
 	
-	
-
 	public void setIp(String ip) {
 		this.ip = ip;
 	}

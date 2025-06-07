@@ -249,7 +249,9 @@ public class Servidor {
 
                     ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
                 } else {
+                	System.out.println("llega el ping");
                     out.writeUTF("ECHO");
+                    break;
                 }
             }
 
@@ -266,7 +268,7 @@ public class Servidor {
             
             InetAddress localAddress = socket.getLocalAddress();
             int localPort = socket.getLocalPort();
-	    	System.out.println("Se deconecto IP:puerto"+remoteAddress.getHostAddress()+":"+remotePort);
+	    	System.out.println("Se deconecto IP: "+remoteAddress.getHostAddress()+" puerto: "+remotePort);
 	    	
 	        /*String nombre = Servidor.getNickname(socket);
 	        System.out.println("Cliente desconectado: " + nombre);
