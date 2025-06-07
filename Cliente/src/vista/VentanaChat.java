@@ -41,7 +41,6 @@ public class VentanaChat extends JFrame implements IVista  {
 	private JPanel panelVentanaDirectorio;
 	
 	private JTextField NickNameUsuario;
-	private JTextField PuertoUsuario;
 	private JButton btnRegistrar;
 	private JButton btnIniciarSesion;
 	private JButton btnEnviar;
@@ -100,19 +99,16 @@ public class VentanaChat extends JFrame implements IVista  {
 		contentPane.add(panel_Inicio);
 		
 		JLabel lblNickName_1 = new JLabel("NickName:");
-		lblNickName_1.setBounds(10, 11, 95, 14);
+		lblNickName_1.setBounds(10, 24, 95, 14);
 		panel_Inicio.add(lblNickName_1);
 		
 		NickNameUsuario = new JTextField();
-		NickNameUsuario.setBounds(74, 8, 86, 20);
+		NickNameUsuario.setBounds(74, 22, 86, 20);
 		NickNameUsuario.setColumns(10);
 		NickNameUsuario.addKeyListener(new KeyAdapter() {
-			//Esto verifica que solo se ingresen numeros en el TextField de puerto
-			//Si no es un numero lo borra
-			//Tampoco permite ingresar más de 5 caracteres
 			@Override
 			public void keyTyped(KeyEvent e) {
-				if(PuertoUsuario.getText().length()>0 && NickNameUsuario.getText().length()>0) {
+				if(NickNameUsuario.getText().length()>0) {
 					btnRegistrar.setEnabled(true);
 					btnIniciarSesion.setEnabled(true);
 				}
@@ -120,37 +116,10 @@ public class VentanaChat extends JFrame implements IVista  {
 		});
 		panel_Inicio.add(NickNameUsuario);
 		
-		JLabel lblPuerto = new JLabel("Puerto:");
-		lblPuerto.setBounds(10, 65, 70, 24);
-		panel_Inicio.add(lblPuerto);
-		
 		JLabel lblMuestraIp = new JLabel("Tu IP:  "+Ip_usuario);
-		lblMuestraIp.setBounds(10, 40, 140, 14);
+		lblMuestraIp.setBounds(10, 65, 140, 14);
 		panel_Inicio.add(lblMuestraIp);
 		
-		PuertoUsuario = new JTextField();
-		PuertoUsuario.setBounds(75, 67, 86, 20);
-		PuertoUsuario.setColumns(10);
-		PuertoUsuario.addKeyListener(new KeyAdapter() {
-			//Esto verifica que solo se ingresen numeros en el TextField de puerto
-			//Si no es un numero lo borra
-			//Tampoco permite ingresar más de 5 caracteres
-			@Override
-			public void keyTyped(KeyEvent e) {
-				char c =e.getKeyChar();
-				if(!Character.isDigit(c)) {
-					e.consume();
-				}
-				if(PuertoUsuario.getText().length()>4) {
-					e.consume();
-				}
-				if(PuertoUsuario.getText().length()>0 && NickNameUsuario.getText().length()>0) {
-					btnRegistrar.setEnabled(true);
-					btnIniciarSesion.setEnabled(true);
-				}
-			}
-		});
-		panel_Inicio.add(PuertoUsuario);
 		
 		btnRegistrar= new JButton("Registrarse");
 		btnRegistrar.setActionCommand("REGISTRAR");
@@ -424,10 +393,6 @@ public class VentanaChat extends JFrame implements IVista  {
 	}
 
 
-	public String getPuertoUsuarioText() {
-		return PuertoUsuario.getText();
-	}
-
 	public String getTecladoText() {
 		return this.Teclado.getText();
 	}
@@ -459,7 +424,7 @@ public class VentanaChat extends JFrame implements IVista  {
 
 //Parte de Inicio-registro-conexion
 	public void conectado() {
-		setTitle("Usuario: " + getNickNameUsuarioText() + " Puerto: " + getPuertoUsuarioText());
+		setTitle("Usuario: " + getNickNameUsuarioText());
 		setContentPane(panelVentanaChat);
 		setBounds(50, 50, 660, 695);
 		revalidate();
