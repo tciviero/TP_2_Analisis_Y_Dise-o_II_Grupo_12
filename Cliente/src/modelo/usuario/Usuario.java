@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.xml.crypto.AlgorithmMethod;
@@ -319,21 +320,50 @@ public class Usuario implements IFuncionalidadUsuario {
 				
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
+				
+				//estos estan encriptados
+				String mensaje_desencriptado;
+				ICifrador decifrador = CifradorFactory.getInstance().getCifrador("AES");
+				List<MensajeFactory> mensajes_cargados = this.persistencia.cargarMensajes(this.nickName);
+				for (MensajeFactory mensaje_leido : mensajes_cargados) {
+					String mensajeDecifrado;
+					try {
+						mensajeDecifrado = decifrador.descifrarMensaje(mensaje_leido.getContenido(), this.clave);
+						NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensajeDecifrado);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
+				String mensaje_descifrado;
 				if(dataArray.length>3) {
 					System.out.println(dataArray);
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
 					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
-						String emisor,mensaje, algoritmoEncriptacion;
+						String emisor,mensaje, algoritmoEncriptacion,mensaje_decifrado;
+						MensajeFactory mensaje_pendiente_persistir;
 						int aux = 5;
 						for(int i=0;i<cant_mensajes_recibidos_desconectado;i += 2) {
 							emisor = dataArray[aux];
 							mensaje = dataArray[aux+1];
 							algoritmoEncriptacion = dataArray[aux+2];
 							aux += 3;
+							//mensaje esta encriptado
+							mensaje_pendiente_persistir = new MensajeFactory(mensaje,emisor,this.nickName);
+							//los gurado encriptados
+							this.persistencia.guardarMensaje(mensaje_pendiente_persistir);
 							System.out.println("emisor: " + emisor + " mensaje: " + mensaje + " encriptacion: " + algoritmoEncriptacion);
-							NuevoMensajeRecibido(emisor,mensaje,algoritmoEncriptacion);
+							//los desencripto para mostrarlos
+							try {
+								mensaje_decifrado = decifrador.descifrarMensaje(mensaje, this.clave);
+								NuevoMensajeRecibido(emisor,mensaje_decifrado);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
 					}
 				}
@@ -357,9 +387,22 @@ public class Usuario implements IFuncionalidadUsuario {
 			String nicknameEmisor = dataArray[1];
 			String mensaje = dataArray[2];
 			String algoritmoEncriptacion = dataArray[3];
-			NuevoMensajeRecibido(nicknameEmisor,mensaje, algoritmoEncriptacion);
-			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
-					
+			
+			ICifrador decifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+			try {
+				String mensajeDecifrado = decifrador.descifrarMensaje(mensaje, this.clave);
+				System.out.println("Mensaje decifrado: " + mensajeDecifrado);
+				
+				NuevoMensajeRecibido(nicknameEmisor,mensajeDecifrado);
+				System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
+				
+				//persistirlo encriptados. mensaje esta encriptado
+				MensajeFactory mensaje_guardar = new MensajeFactory(mensaje,nicknameEmisor,this.nickName);
+				System.out.println("mensaje cifrado en usuario: " + mensaje_guardar.getContenido());
+				this.persistencia.guardarMensaje(mensaje_guardar);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -474,7 +517,7 @@ public class Usuario implements IFuncionalidadUsuario {
 			System.out.println(algoritmoEncriptacion);
 			out.writeUTF(mensajeRegistro);
 			
-			MensajeFactory mensaje_enviar = new MensajeFactory(mensaje, this.nickName, destinatario);
+			MensajeFactory mensaje_enviar = new MensajeFactory(mensajeEncriptado, this.nickName, destinatario);
 			this.persistencia.guardarMensaje(mensaje_enviar);
 			
 		} catch (IOException e) {
@@ -513,10 +556,25 @@ public class Usuario implements IFuncionalidadUsuario {
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
 		EventoNuevoMensajeRecibido();
-		
 	}
 	
-	//Nueva version, no saco la otra sin encriptacion porque se rompe mensajes pendientes
+	@Override
+	public void NuevoMensajeRecibido(String Emisor,String Receptor, String texto) {
+		//cuando el emisor es nickname 
+		System.out.println("AAAAA: recibimos mensaje:"+texto);
+		if(Receptor.equalsIgnoreCase(this.nickName)) {
+			Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
+			c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
+		}else {
+			Conversacion c = getConversacion(Receptor);
+			c.addMensaje(Emisor, texto, false);			
+		}
+		EventoNuevoMensajeRecibido();
+	}
+	
+	
+	
+	/*//Nueva version, no saco la otra sin encriptacion porque se rompe mensajes pendientes
 	public void NuevoMensajeRecibido(String Emisor, String texto, String algoritmoEncriptacion) {
 		try {
 		System.out.println("Recibimos mensaje: " + texto);
@@ -534,7 +592,7 @@ public class Usuario implements IFuncionalidadUsuario {
 			e.printStackTrace();
 		}
 		
-	}
+	}*/
 	
 	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
 		destinatario.addMensaje(nickName,texto, true);

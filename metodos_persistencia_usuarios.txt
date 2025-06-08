@@ -1,4 +1,2 @@
-tete:texto
-Regio:texto
-Juan:xml
-dede:texto
+tete:null
+dede:json
