@@ -1,0 +1,4 @@
+Pablo:xml
+Pedrito:json
+Juan:texto
+Jason:json
