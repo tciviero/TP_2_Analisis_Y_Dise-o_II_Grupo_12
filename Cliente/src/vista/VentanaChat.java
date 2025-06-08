@@ -2,6 +2,7 @@ package vista;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionListener;
 
@@ -29,6 +30,9 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JScrollPane;
 
@@ -63,6 +67,7 @@ public class VentanaChat extends JFrame implements IVista  {
 	
 	private JPanel panel_Chat ;
 	private JLabel lblTituloChat;
+	private JOptionPane opcionEncriptacion;
 	private JTextArea Chat;
 	private JTextField Teclado;
 	private JTextField tecladoDirectorio;
@@ -71,6 +76,9 @@ public class VentanaChat extends JFrame implements IVista  {
 	private ArrayList<UsuarioYEstado> Directorio;
 	private DefaultListModel modeloDirectorio;
 	private JList<UsuarioYEstado> Lista_Directorio;
+	private JRadioButton aesButton;
+	private JRadioButton blowButton;
+	private AbstractButton desButton;
 
 
 	
@@ -277,6 +285,26 @@ public class VentanaChat extends JFrame implements IVista  {
 		lblTituloChat.setBounds(10, 0, 400, 100);
 		lblTituloChat.setFont(new Font("Arial", Font.BOLD, 20));
 		panel_Chat.add(lblTituloChat);
+		
+	    aesButton = new JRadioButton("AES");
+	    aesButton.setBackground(new Color(128, 128, 255));
+	    aesButton.setBounds(160, 35, 70, 30);
+        blowButton = new JRadioButton("BLOW");
+        blowButton.setBackground(new Color(128, 128, 255));
+        blowButton.setBounds(230, 35, 70, 30);
+        desButton = new JRadioButton("DES");
+        desButton.setBackground(new Color(128, 128, 255));
+        desButton.setBounds(300, 35, 70, 30);
+        ButtonGroup group = new ButtonGroup();
+        group.add(aesButton);
+        group.add(blowButton);
+        group.add(desButton);
+        aesButton.setSelected(true); // default
+
+		panel_Chat.add(aesButton);
+		panel_Chat.add(blowButton);
+		panel_Chat.add(desButton);
+		
 
 		Teclado = new JFormattedTextField();
 		Teclado.setBounds(10, 600, 320, 25);
@@ -598,6 +626,22 @@ public class VentanaChat extends JFrame implements IVista  {
 	public void onUsuarioAgendadoExitosamente() {
 		new JNotification("Usuario agendando!");
 		
+	}
+
+
+	@Override
+	public String getOpcionEncriptacionText() {
+		//Devuelve que opcion de encriptacion se elegio
+		if(aesButton.isSelected()) {
+			return "AES";
+		}
+		if(blowButton.isSelected()) {
+			return "BLOW";
+		}
+		if(desButton.isSelected()) {
+			return "DES";
+		}
+		return null;
 	}
 	
 	

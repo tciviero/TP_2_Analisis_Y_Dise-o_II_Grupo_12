@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.xml.crypto.AlgorithmMethod;
@@ -317,10 +318,17 @@ public class Usuario implements IFuncionalidadUsuario {
 			if(dataArray[1].equalsIgnoreCase("OK")) {
 				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
 				
+				List<MensajeFactory> mensajes_cargados = this.persistencia.cargarMensajes(this.nickName);
+				for (MensajeFactory mensaje_leido : mensajes_cargados) {
+					NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getContenido());
+				}
+				
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
+				
+		
 				if(dataArray.length>3) {
 					System.out.println(dataArray);
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
@@ -465,6 +473,7 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	//Nueva version con encriptacion, no saco la otra porque se rompe mensajes pendientes
 	public void enviarRequestMensaje(String mensaje, String destinatario, String algoritmoEncriptacion) {
+		System.out.println("ALGORITMO ENCRIPTACION =  " + algoritmoEncriptacion);
 		try {
 			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			ICifrador cifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
@@ -513,7 +522,6 @@ public class Usuario implements IFuncionalidadUsuario {
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
 		EventoNuevoMensajeRecibido();
-		
 	}
 	
 	//Nueva version, no saco la otra sin encriptacion porque se rompe mensajes pendientes
@@ -527,7 +535,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		c.addMensaje(Emisor, textoDecifrado, false);			//Agregamos el mensaje ajeno
 		EventoNuevoMensajeRecibido();
 		
-		MensajeFactory mensaje_guardar = new MensajeFactory(texto,Emisor,this.nickName);
+		MensajeFactory mensaje_guardar = new MensajeFactory(textoDecifrado,Emisor,this.nickName);
 		this.persistencia.guardarMensaje(mensaje_guardar);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

@@ -19,6 +19,12 @@ public class CifradorFactory {
 		if (nombreCifrador.equalsIgnoreCase("AES")){
 			return new CifradorAES();
 		}
+		if (nombreCifrador.equalsIgnoreCase("BLOW")){
+			return new CifradorBlowfish();
+		}
+		if (nombreCifrador.equalsIgnoreCase("DES")){
+			return new CifradorDES();
+		}
 		return null;
 	}
 }
