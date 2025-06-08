@@ -16,7 +16,7 @@ public class Mensaje implements Serializable{
 	
 	public Mensaje(String nombreEmisor,String texto, boolean elMensajeEsPropio) {
 		this.emisor=nombreEmisor;
-		this.texto=texto;
+		this.texto = texto;
 		this.elMensajeEsPropio = elMensajeEsPropio;
 		this.fechaHoraEnvio=LocalDateTime.now();
 	}

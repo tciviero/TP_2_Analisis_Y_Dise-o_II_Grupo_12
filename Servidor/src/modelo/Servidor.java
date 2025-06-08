@@ -358,19 +358,22 @@ public class Servidor {
     		                EnviarDirectorioYMensajesASecundario();
     		                break;
     		            case "ENVIAR":
+    		            	
+    		            		//VERSION CON ENCRIPTACION
     		            	this.SolicitudID=this.SolicitudID+1;
-    		            	EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
-    		                
-    		            	nombreUsuario = dataArray[1];
-    		                String Mensaje = dataArray[2];
-    		                String NicknameReceptor = dataArray[3];
-    		                System.out.println("ENVIANDO MENSAJE SERVIDOR");
-    		                enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor);
-    		                
-    		                ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
-    		                ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
-    		                EnviarDirectorioYMensajesASecundario();
-    		                break;
+        		            EnviarSolicitudRecibidaAlSecundario(this.SolicitudID,data); //"ATENDIENDO"
+        		                
+        		            nombreUsuario = dataArray[1];
+        		            String Mensaje = dataArray[2];
+        		            String NicknameReceptor = dataArray[3];
+        		            String algoritmoEncriptacion = dataArray[4];
+        		            System.out.println("ENVIANDO MENSAJE SERVIDOR");
+        		            enviarMensaje(nombreUsuario, Mensaje, NicknameReceptor, algoritmoEncriptacion);
+        		                
+        		            ControladorServidor.getInstance().ActualizarVistas(this.directorio.getUsuarios());
+        		            ActualizarEstadoSolicitudAlSecundario(this.SolicitudID);//"ATENDIDA"
+        		            EnviarDirectorioYMensajesASecundario();
+    		            	break;
     		            case "DESCONEXION":
     		            	System.out.println("DESCONECTADO!");
     		            	this.SolicitudID=this.SolicitudID+1;
@@ -450,7 +453,6 @@ public class Servidor {
 			}
 	    }
 	    catch (IOException e) {
-	    	e.printStackTrace();
 	    	InetAddress remoteAddress = socket.getInetAddress();
             int remotePort = socket.getPort();
             
@@ -551,19 +553,20 @@ public class Servidor {
 	}
 
 //------------COMUNICACION CON CLIENTES------------
-	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor) throws IOException {
+	//NUEVA VERSION CON ENCRIPTACION, falta cambiar mensajes pendientes
+	private void enviarMensaje(String nick_emisor, String mensaje, String nick_receptor, String algoritmoEncriptacion) throws IOException {
 		System.out.println(nick_emisor + " Desea enviar a [" + nick_receptor+ "] el siguiente: -" + mensaje+"-");
 		Socket socket_receptor = getSocket(nick_receptor);
 				
 		if(this.directorio.usuarioEstaConectado(nick_receptor)) { //si esta conectado lo envia
 			DataOutputStream out = new DataOutputStream(socket_receptor.getOutputStream());
-			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje;
+			String mensaje_enviar = "RECIBIR" + "`" + nick_emisor + "`" + mensaje + "`" + algoritmoEncriptacion;
 			System.out.println("mensaje a enviar al usuario desde el servidor: " + mensaje_enviar);
 			out.flush();
 			out.writeUTF(mensaje_enviar);
 		} else {
 			System.out.println("usuario receptor: " + nick_receptor + " esta desconectado");
-			MensajesUsuario.getInstance().agregarMensaje(nick_receptor, nick_emisor, mensaje); //lo guarda igual en el historial
+			MensajesUsuario.getInstance().agregarMensaje(nick_receptor, nick_emisor, mensaje,algoritmoEncriptacion); //LO GUARDA ENCRIPTADO, FALTA ESTA PARTE!
 		}
 	}
 

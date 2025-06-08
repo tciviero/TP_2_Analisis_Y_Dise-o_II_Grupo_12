@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
+import javax.xml.crypto.AlgorithmMethod;
+
 import controlador.Controlador;
 import excepciones.AgotoIntentosConectarException;
 import excepciones.NoRespondePrimario;
@@ -18,12 +20,14 @@ import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
+import modelo.Cifrado.CifradorFactory;
+import modelo.Cifrado.ICifrador;
 import modelo.Contacto.Contacto;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
 	private static Usuario instancia = null;
-
+	private final String clave = "RIO ARROYO AGUA";
 	private final int puerto_monitor = 8888;
 	private String nickName,ip;
 
@@ -306,16 +310,18 @@ public class Usuario implements IFuncionalidadUsuario {
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
 				if(dataArray.length>3) {
+					System.out.println(dataArray);
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
 					if(cant_mensajes_recibidos_desconectado > 0) { //si tiene mensajes pendientes
-						String emisor,mensaje;
+						String emisor,mensaje, algoritmoEncriptacion;
 						int aux = 5;
-						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
+						for(int i=0;i<cant_mensajes_recibidos_desconectado;i += 2) {
 							emisor = dataArray[aux];
 							mensaje = dataArray[aux+1];
-							aux += 2;
-							System.out.println("emisor: " + emisor + " mensaje: " + mensaje);
-							NuevoMensajeRecibido(emisor,mensaje);
+							algoritmoEncriptacion = dataArray[aux+2];
+							aux += 3;
+							System.out.println("emisor: " + emisor + " mensaje: " + mensaje + " encriptacion: " + algoritmoEncriptacion);
+							NuevoMensajeRecibido(emisor,mensaje,algoritmoEncriptacion);
 						}
 					}
 				}
@@ -334,9 +340,13 @@ public class Usuario implements IFuncionalidadUsuario {
 			}
 			break;
 		case "RECIBIR":
-			String nicknameEmisor=dataArray[1];
-			String mensaje=dataArray[2];
-			NuevoMensajeRecibido(nicknameEmisor,mensaje);
+			//VERSION CON ENCRIPTACION
+			System.out.println("ENCRIPTACION");
+			String nicknameEmisor = dataArray[1];
+			String mensaje = dataArray[2];
+			String algoritmoEncriptacion = dataArray[3];
+			NuevoMensajeRecibido(nicknameEmisor,mensaje, algoritmoEncriptacion);
+			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -435,6 +445,24 @@ public class Usuario implements IFuncionalidadUsuario {
 			e.printStackTrace();
 		}
 	}
+	//Nueva version con encriptacion, no saco la otra porque se rompe mensajes pendientes
+	public void enviarRequestMensaje(String mensaje, String destinatario, String algoritmoEncriptacion) {
+		try {
+			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+			ICifrador cifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+			String mensajeEncriptado = cifrador.cifrarMensaje(mensaje, clave);
+			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensajeEncriptado + "`" + destinatario + "`" + algoritmoEncriptacion;
+			System.out.println("Mensaje enviado : " + mensajeRegistro);
+			System.out.println(algoritmoEncriptacion);
+			out.writeUTF(mensajeRegistro);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 	public void notificarDesconectado() {
 		DataOutputStream out;
@@ -460,10 +488,27 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	@Override
 	public void NuevoMensajeRecibido(String Emisor, String texto) {
-		System.out.println("AAAAA: recibimos mensaje:"+texto);
+		System.out.println("Recibimos mensaje: " + texto);
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
 		EventoNuevoMensajeRecibido();
+		
+	}
+	
+	//Nueva version, no saco la otra sin encriptacion porque se rompe mensajes pendientes
+	public void NuevoMensajeRecibido(String Emisor, String texto, String algoritmoEncriptacion) {
+		try {
+		System.out.println("Recibimos mensaje: " + texto);
+		ICifrador decifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+		String textoDecifrado = decifrador.descifrarMensaje(texto, clave);
+		System.out.println("Mensaje decifrado: " + textoDecifrado);
+		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
+		c.addMensaje(Emisor, textoDecifrado, false);			//Agregamos el mensaje ajeno
+		EventoNuevoMensajeRecibido();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	

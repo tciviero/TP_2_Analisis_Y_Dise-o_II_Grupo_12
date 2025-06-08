@@ -71,10 +71,13 @@ public class Directorio {
 	}
 	
 	public String getDirectorioFormateadoConsulta(String filtro) {
-		 StringBuilder sb = new StringBuilder("DIRECTORIO");
+		 	StringBuilder sb = new StringBuilder("DIRECTORIO");
+		 	
+		 	String filtroMinuscula = filtro.toLowerCase();
+		 	
 	        int cont = 0;
 	        for (Entry<String, Boolean> e : this.estadoUsuarios.entrySet()) {
-	            if (e.getKey().contains(filtro)) {
+	            if (e.getKey().toLowerCase().contains(filtroMinuscula)) {
 	                cont++;
 	                if (cont == 10) break;
 	            }
@@ -83,7 +86,7 @@ public class Directorio {
 	        
 	        int añadidos = 0;
 	        for (Entry<String, Boolean> e : this.estadoUsuarios.entrySet()) {
-	            if (e.getKey().contains(filtro)) {
+	            if (e.getKey().toLowerCase().contains(filtroMinuscula)) {
 	                sb.append("`")
 	                  .append(e.getKey())
 	                  .append("`")
