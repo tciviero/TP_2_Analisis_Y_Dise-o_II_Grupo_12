@@ -1,0 +1,14 @@
+[
+    {
+        "contenido": "hola1",
+        "receptor": "dede",
+        "hora": "14:26:02",
+        "emisor": "tete"
+    },
+    {
+        "contenido": "te respondo2",
+        "receptor": "tete",
+        "hora": "14:26:07",
+        "emisor": "dede"
+    }
+]

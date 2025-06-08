@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mensajes_xml>
+                
+    
+    
+    <mensaje>
+                                
+        
+        
+        <emisor>Juan</emisor>
+                                
+        
+        
+        <receptor>Regio</receptor>
+                                
+        
+        
+        <contenido>Holaa</contenido>
+                                
+        
+        
+        <hora>19:12:56</hora>
+                            
+    
+    
+    </mensaje>
+            
+    
+    
+    <mensaje>
+                        
+        
+        <emisor>Regio</emisor>
+                        
+        
+        <receptor>Juan</receptor>
+                        
+        
+        <contenido>Kg8p78Xe8zASK51pIqfA7A==</contenido>
+                        
+        
+        <hora>19:13:02</hora>
+                    
+    
+    </mensaje>
+        
+    
+    <mensaje>
+                
+        <emisor>Regio</emisor>
+                
+        <receptor>Juan</receptor>
+                
+        <contenido>V2Ba7/0U9+XxSMc+xwUdD0gYXb1yTGHlZwRVA2w8hJ8=</contenido>
+                
+        <hora>19:13:05</hora>
+            
+    </mensaje>
+    
+    <mensaje>
+        <emisor>Juan</emisor>
+        <receptor>Regio</receptor>
+        <contenido>A ver probemos soy Juan</contenido>
+        <hora>19:13:15</hora>
+    </mensaje>
+</mensajes_xml>

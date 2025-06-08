@@ -1,6 +1,7 @@
 package controlador;
 
 import java.awt.event.ActionEvent;
+import modelo.usuario.MetodoPersistenciaUsuarios;
 import vista.IVista;
 import java.awt.event.ActionListener;
 import java.io.DataOutputStream;
@@ -31,10 +32,14 @@ import modelo.usuario.Usuario;
 import modelo.usuario.UsuarioYEstado;
 import vista.VentanaChat;
 
+import vista.VistaMetodoPersistencia;
+
 public class Controlador implements ActionListener, ListSelectionListener{
 	IFuncionalidadUsuario usuario = Usuario.getInstancia();
 	private IVista vista;
 	private static Controlador instance = null;
+	
+	private VistaMetodoPersistencia vistaMetodoPersistencia = new VistaMetodoPersistencia();
 	
 	private String IP_Usuario = null;
 	
@@ -105,10 +110,15 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	private void registrar() {
 		String nombre = this.vista.getNickNameUsuarioText();
 		try {
+			String metodo = this.vistaMetodoPersistencia.pedirMetodoPersistencia();
+			MetodoPersistenciaUsuarios.get_instance().guardarUsuarioEnArchivo(nombre, metodo);
+			System.out.println("metodo elegido: " + metodo);
 			//if(!Usuario.getInstancia().isConectado()) {
 			Usuario.getInstancia().Iniciar(nombre, IP_Usuario);
 			Usuario.getInstancia().Conectar();
 			//Usuario.getInstancia().esperarConexion();
+			
+			Usuario.getInstancia().setearMetodoPersistencia(metodo);
 			//}
 			Usuario.getInstancia().enviarRequestRegistro();
 		} catch (AgotoIntentosConectarException e) {
@@ -122,6 +132,11 @@ public class Controlador implements ActionListener, ListSelectionListener{
 	private void comprobarInicioSesion() {
 		String nombre = this.vista.getNickNameUsuarioText();
 		try {
+			MetodoPersistenciaUsuarios.get_instance().cargarDesdeArchivo();
+			String metodo_seleccionado = MetodoPersistenciaUsuarios.get_instance().buscarMetodoUsuario(nombre);
+			System.out.println("metodo que eligio: " + metodo_seleccionado);
+			Usuario.getInstancia().setearMetodoPersistencia(metodo_seleccionado);
+			
 			Usuario.getInstancia().Iniciar(nombre, IP_Usuario);
 			Usuario.getInstancia().enviarRequestInicioSesion(nombre); //aca ya comprobo todo
 			//ahora toca iniciar sesion

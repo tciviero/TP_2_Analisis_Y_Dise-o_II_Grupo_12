@@ -18,11 +18,14 @@ import excepciones.AgotoIntentosConectarException;
 import excepciones.NoRespondePrimario;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
+import factory.FactoryPersistencia;
+import implementaciones.MensajeDAO;
 import modelo.Conversacion;
 import modelo.IActualizarMensajes;
 import modelo.Cifrado.CifradorFactory;
 import modelo.Cifrado.ICifrador;
 import modelo.Contacto.Contacto;
+import modelo_factory.MensajeFactory;
 import vista.INotificable;
 
 public class Usuario implements IFuncionalidadUsuario {
@@ -36,6 +39,9 @@ public class Usuario implements IFuncionalidadUsuario {
 	private ArrayList<UsuarioYEstado> directorio;
 	private int intentosConectar;
 	private ArrayList<INotificable> suscriptores;
+	
+	private MensajeDAO persistencia;
+	private String metodo_persistencia;
 	
 	public boolean estaConectado = false;
 
@@ -295,6 +301,10 @@ public class Usuario implements IFuncionalidadUsuario {
 			if(dataArray[1].equalsIgnoreCase("OK")) {
 				System.out.println("Usuario registrado exitosamente");
 				this.estaConectado = true;
+				
+				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
+				
+				
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
 			}
@@ -305,6 +315,8 @@ public class Usuario implements IFuncionalidadUsuario {
 			break;
 		case "RES-INICIO":
 			if(dataArray[1].equalsIgnoreCase("OK")) {
+				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
+				
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
 				EventoNotificacionRecibido(dataArray[2]);
@@ -347,6 +359,7 @@ public class Usuario implements IFuncionalidadUsuario {
 			String algoritmoEncriptacion = dataArray[3];
 			NuevoMensajeRecibido(nicknameEmisor,mensaje, algoritmoEncriptacion);
 			System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
+					
 			break;
 		case "DIRECTORIO":
 			//Llega la lista de contactos, que son solo strings con los nicknames
@@ -371,6 +384,11 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 
 		
+	}
+	
+	
+	public void setearMetodoPersistencia(String metodo) {
+		this.metodo_persistencia = metodo;
 	}
 
 	/*public boolean isConectado() {
@@ -456,6 +474,9 @@ public class Usuario implements IFuncionalidadUsuario {
 			System.out.println(algoritmoEncriptacion);
 			out.writeUTF(mensajeRegistro);
 			
+			MensajeFactory mensaje_enviar = new MensajeFactory(mensaje, this.nickName, destinatario);
+			this.persistencia.guardarMensaje(mensaje_enviar);
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -505,6 +526,9 @@ public class Usuario implements IFuncionalidadUsuario {
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 		c.addMensaje(Emisor, textoDecifrado, false);			//Agregamos el mensaje ajeno
 		EventoNuevoMensajeRecibido();
+		
+		MensajeFactory mensaje_guardar = new MensajeFactory(texto,Emisor,this.nickName);
+		this.persistencia.guardarMensaje(mensaje_guardar);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
