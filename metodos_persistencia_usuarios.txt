@@ -1,2 +1,0 @@
-tete:xml
-dede:json
