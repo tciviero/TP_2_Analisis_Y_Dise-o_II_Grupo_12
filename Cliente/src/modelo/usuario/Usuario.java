@@ -328,7 +328,6 @@ public class Usuario implements IFuncionalidadUsuario {
 				
 				for (MensajeFactory mensaje_leido : mensajes_cargados) {
 					try {
-						System.out.println("metodo elegidoooooooooo: " + mensaje_leido.getMetodo());
 						decifrador = CifradorFactory.getInstance().getCifrador(mensaje_leido.getMetodo());
 						String mensajeDecifrado = decifrador.descifrarMensaje(mensaje_leido.getContenido(), this.clave);
 						NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensajeDecifrado);
@@ -337,8 +336,7 @@ public class Usuario implements IFuncionalidadUsuario {
 						e.printStackTrace();
 					}
 				}
-				
-				
+
 				String mensaje_descifrado;
 				if(dataArray.length>3) {
 					System.out.println(dataArray);
@@ -347,7 +345,7 @@ public class Usuario implements IFuncionalidadUsuario {
 						String emisor,mensaje, algoritmoEncriptacion,mensaje_decifrado;
 						MensajeFactory mensaje_pendiente_persistir;
 						int aux = 5;
-						for(int i=0;i<cant_mensajes_recibidos_desconectado;i += 2) {
+						for(int i=0;i<cant_mensajes_recibidos_desconectado;i++) {
 							emisor = dataArray[aux];
 							mensaje = dataArray[aux+1];
 							algoritmoEncriptacion = dataArray[aux+2];
