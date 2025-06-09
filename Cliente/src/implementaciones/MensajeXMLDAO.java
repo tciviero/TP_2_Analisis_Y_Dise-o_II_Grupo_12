@@ -70,6 +70,10 @@ public class MensajeXMLDAO implements MensajeDAO {
             String hora = dateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             hora_elemento.setTextContent(hora);
             mensajeElem.appendChild(hora_elemento);
+            
+            Element metodo = doc.createElement("metodo");
+            contenido.setTextContent(mensaje.getMetodo());
+            mensajeElem.appendChild(metodo);
 
             doc.getDocumentElement().appendChild(mensajeElem);
 
@@ -107,8 +111,10 @@ public class MensajeXMLDAO implements MensajeDAO {
 
                 String hora = elem.getElementsByTagName("hora").item(0).getTextContent();
                 //LocalDateTime fecha = LocalDateTime.parse(fechaStr, formatter);
+                
+                String metodo = elem.getElementsByTagName("metodo").item(0).getTextContent();
 
-                mensajes.add(new MensajeFactory(contenido,hora,emisor, receptor));
+                mensajes.add(new MensajeFactory(contenido,hora,emisor, receptor,metodo));
             }
 
         } catch (Exception e) {

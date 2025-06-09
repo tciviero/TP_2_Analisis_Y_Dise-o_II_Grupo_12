@@ -8,6 +8,6 @@
 	<classpathentry kind="src" path="Cliente/src"/>
 	<classpathentry kind="src" path="Servidor/src"/>
 	<classpathentry kind="src" path="Monitor"/>
-	<classpathentry kind="lib" path="C:/Users/civie/OneDrive/Escritorio/json/json-20210307.jar"/>
+	<classpathentry kind="lib" path="C:/Users/guty/Downloads/json-20210307.jar"/>
 	<classpathentry kind="output" path="Cliente/bin"/>
 </classpath>

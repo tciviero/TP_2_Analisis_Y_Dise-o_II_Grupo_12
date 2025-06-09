@@ -22,7 +22,7 @@ public class MensajeTextoPlanoDAO implements MensajeDAO {
 	public void guardarMensaje(MensajeFactory mensaje) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(ARCHIVO, true))) {
 			String linea = mensaje.getFecha() + "|" + mensaje.getEmisor() + "|" + mensaje.getReceptor() + "|"
-					+ mensaje.getContenido();
+					+ mensaje.getContenido() + "|" + mensaje.getMetodo();
 			writer.write(linea);
 			writer.newLine();
 		} catch (IOException e) {
@@ -46,9 +46,10 @@ public class MensajeTextoPlanoDAO implements MensajeDAO {
 					String emisor = partes[1];
 					String receptor = partes[2];
 					String contenido = partes[3];
+					String metodo = partes[4];
 
 					if (emisor.equals(miUsuario) || receptor.equals(miUsuario)) {
-						mensajes.add(new MensajeFactory(contenido, emisor, receptor));
+						mensajes.add(new MensajeFactory(contenido, emisor, receptor,metodo));
 					}
 				}
 			}

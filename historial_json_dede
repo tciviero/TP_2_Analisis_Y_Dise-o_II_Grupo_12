@@ -1,0 +1,16 @@
+[
+    {
+        "contenido": "nychRF8TjI99bFejZqRHN2bfX4kyHVAJEiFOKTm/LhM=",
+        "receptor": "dede",
+        "hora": "18:24:25",
+        "metodo": "AES",
+        "emisor": "tete"
+    },
+    {
+        "contenido": "vctkFvVozrKy/1/VOLPA3lZiwH6BUj/E",
+        "receptor": "tete",
+        "hora": "18:24:33",
+        "metodo": "BLOW",
+        "emisor": "dede"
+    }
+]

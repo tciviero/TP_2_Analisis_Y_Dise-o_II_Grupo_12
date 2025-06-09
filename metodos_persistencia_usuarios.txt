@@ -1,7 +1,2 @@
-Pablo:xml
-tete:texto
-Regio:texto
-juan:texto
-Juan:xml
-dede:texto
-Pan:xml
+tete:json
+dede:json

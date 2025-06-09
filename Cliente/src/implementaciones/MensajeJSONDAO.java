@@ -37,6 +37,7 @@ public class MensajeJSONDAO implements MensajeDAO {
             nuevoMensaje.put("emisor", mensaje.getEmisor());
             nuevoMensaje.put("receptor", mensaje.getReceptor());
             nuevoMensaje.put("contenido", mensaje.getContenido());
+            nuevoMensaje.put("metodo", mensaje.getMetodo());
 
             String fechaStr = mensaje.getFecha();
             LocalDateTime dateTime = LocalDateTime.parse(fechaStr);
@@ -74,8 +75,9 @@ public class MensajeJSONDAO implements MensajeDAO {
 
                 String contenidoMensaje = msgObj.getString("contenido");
                 String hora = msgObj.getString("hora");
+                String metodo = msgObj.getString("metodo");
 
-                mensajes.add(new MensajeFactory(contenidoMensaje, hora, emisor, receptor));
+                mensajes.add(new MensajeFactory(contenidoMensaje, hora, emisor, receptor,metodo));
             }
 
         } catch (Exception e) {
