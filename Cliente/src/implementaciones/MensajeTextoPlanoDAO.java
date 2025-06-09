@@ -40,8 +40,8 @@ public class MensajeTextoPlanoDAO implements MensajeDAO {
 		try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
 			String linea;
 			while ((linea = reader.readLine()) != null) {
-				String[] partes = linea.split("\\|", 4);
-				if (partes.length == 4) {
+				String[] partes = linea.split("\\|", 5);
+				if (partes.length == 5) {
 					String fecha = partes[0];
 					String emisor = partes[1];
 					String receptor = partes[2];

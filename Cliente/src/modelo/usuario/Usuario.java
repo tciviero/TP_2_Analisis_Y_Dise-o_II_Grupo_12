@@ -328,6 +328,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				
 				for (MensajeFactory mensaje_leido : mensajes_cargados) {
 					try {
+						System.out.println("metodo elegidoooooooooo: " + mensaje_leido.getMetodo());
 						decifrador = CifradorFactory.getInstance().getCifrador(mensaje_leido.getMetodo());
 						String mensajeDecifrado = decifrador.descifrarMensaje(mensaje_leido.getContenido(), this.clave);
 						NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensajeDecifrado);
@@ -337,8 +338,7 @@ public class Usuario implements IFuncionalidadUsuario {
 					}
 				}
 				
-				EventoNotificacionRecibido(dataArray[2]);
-				VistaConectado();
+				
 				String mensaje_descifrado;
 				if(dataArray.length>3) {
 					System.out.println(dataArray);
@@ -361,7 +361,7 @@ public class Usuario implements IFuncionalidadUsuario {
 							try {
 								decifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
 								mensaje_decifrado = decifrador.descifrarMensaje(mensaje, this.clave);
-								NuevoMensajeRecibido(emisor,mensaje_decifrado);
+								NuevoMensajeRecibido(emisor,this.nickName,mensaje_decifrado);
 							} catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -369,6 +369,8 @@ public class Usuario implements IFuncionalidadUsuario {
 						}
 					}
 				}
+				EventoNotificacionRecibido(dataArray[2]);
+				VistaConectado();
 			}
 			else {
 				System.out.println("Error de Inicio:"+dataArray[2]);
@@ -395,7 +397,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				String mensajeDecifrado = decifrador.descifrarMensaje(mensaje, this.clave);
 				System.out.println("Mensaje decifrado: " + mensajeDecifrado);
 				
-				NuevoMensajeRecibido(nicknameEmisor,mensajeDecifrado);
+				NuevoMensajeRecibido(nicknameEmisor,this.nickName,mensajeDecifrado);
 				System.out.println("mensaje recibido en usuario " + nicknameEmisor + " " + mensaje + " encriptado con " + algoritmoEncriptacion);
 				
 				//persistirlo encriptados. mensaje esta encriptado
@@ -553,13 +555,13 @@ public class Usuario implements IFuncionalidadUsuario {
 		return this.estaConectado;
 	}
 	
-	@Override
+	/*@Override
 	public void NuevoMensajeRecibido(String Emisor, String texto) {
 		System.out.println("Recibimos mensaje: " + texto);
 		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
 		EventoNuevoMensajeRecibido();
-	}
+	}*/
 	
 	@Override
 	public void NuevoMensajeRecibido(String Emisor,String Receptor, String texto) {

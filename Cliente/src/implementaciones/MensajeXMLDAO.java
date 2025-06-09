@@ -72,7 +72,7 @@ public class MensajeXMLDAO implements MensajeDAO {
             mensajeElem.appendChild(hora_elemento);
             
             Element metodo = doc.createElement("metodo");
-            contenido.setTextContent(mensaje.getMetodo());
+            metodo.setTextContent(mensaje.getMetodo());
             mensajeElem.appendChild(metodo);
 
             doc.getDocumentElement().appendChild(mensajeElem);
