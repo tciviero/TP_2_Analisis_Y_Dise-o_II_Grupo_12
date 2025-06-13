@@ -5,24 +5,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import javax.xml.crypto.AlgorithmMethod;
-
-import controlador.Controlador;
 import excepciones.AgotoIntentosConectarException;
-import excepciones.NoRespondePrimario;
 import excepciones.UsuarioConSesionActivaException;
 import excepciones.UsuarioNoRegistradoException;
 import factory.FactoryPersistencia;
-import implementaciones.MensajeDAO;
+import factory.PersistenciaFactory;
+import implementaciones.contacto.ContactoDAO;
+import implementaciones.mensaje.MensajeDAO;
 import modelo.Conversacion;
-import modelo.IActualizarMensajes;
 import modelo.Cifrado.CifradorFactory;
 import modelo.Cifrado.ICifrador;
 import modelo.Contacto.Contacto;
@@ -41,8 +36,11 @@ public class Usuario implements IFuncionalidadUsuario {
 	private int intentosConectar;
 	private ArrayList<INotificable> suscriptores;
 	
-	private MensajeDAO persistencia;
 	private String metodo_persistencia;
+	//private IFactoryPersistencia persistencia;
+	private MensajeDAO persistencia_mensajes;
+	private ContactoDAO persistencia_contactos;
+	
 	
 	public boolean estaConectado = false;
 
@@ -120,10 +118,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	            new Thread(() -> {
 	            	EscucharMensajesServidor();
 				}).start();
-	            
-	            /*String mensaje = "agregar_socket`"+this.nickName;
-	            enviarMensaje(mensaje);
-	            System.out.println("se manda agregar socket al servidor");*/
 	             
 	            break; // si todo salio bien, salgo del bucle
 	        } catch (IOException e) {
@@ -163,18 +157,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	        }
 	    }
 	}
-	
-	/*private void enviarAgregarSocketAlServidor() {
-	    String mensaje = "agregar_socket`" + this.nickName;
-		try {
-	        DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
-	        out.writeUTF(mensaje);
-	        out.flush();
-	        System.out.println("se le envia al servidor");
-	    } catch (IOException e) {
-	        System.err.println("Error al enviar mensaje al servidor: " + e.getMessage());
-	    }
-	}*/
 	
 	public void enviarRequestRegistro() throws IOException {
 		String mensaje = "registrar`"+this.nickName;
@@ -303,8 +285,9 @@ public class Usuario implements IFuncionalidadUsuario {
 				System.out.println("Usuario registrado exitosamente");
 				this.estaConectado = true;
 				
-				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
-				
+				PersistenciaFactory factory = FactoryPersistencia.crearFactory(this.metodo_persistencia);
+				this.persistencia_mensajes = factory.crearMensajeDAO(this.nickName);
+				this.persistencia_contactos = factory.crearContactoDAO(this.nickName);
 				
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
@@ -316,28 +299,35 @@ public class Usuario implements IFuncionalidadUsuario {
 			break;
 		case "RES-INICIO":
 			if(dataArray[1].equalsIgnoreCase("OK")) {
-				this.persistencia = FactoryPersistencia.crearDAO(this.metodo_persistencia,this.nickName);
+				PersistenciaFactory factory = FactoryPersistencia.crearFactory(this.metodo_persistencia);
+				this.persistencia_mensajes = factory.crearMensajeDAO(this.nickName);
+				this.persistencia_contactos = factory.crearContactoDAO(this.nickName);
 				
 				System.out.println("Usuario Logueado exitosamente");
 				this.estaConectado = true;
 				//estos estan encriptados
 				String mensaje_desencriptado;
 				
-				List<MensajeFactory> mensajes_cargados = this.persistencia.cargarMensajes(this.nickName);
-				ICifrador decifrador; //= CifradorFactory.getInstance().getCifrador("AES");
+				List<Contacto> contactos_agendados = this.persistencia_contactos.cargarContactos(this.nickName);
+				for(Contacto contacto_leido : contactos_agendados) {
+					System.out.println("contacto leido: " + contacto_leido.getNickName());
+					this.agendarContacto(contacto_leido);
+				}
 				
+				List<MensajeFactory> mensajes_cargados = this.persistencia_mensajes.cargarMensajes(this.nickName);
+				ICifrador decifrador; //= CifradorFactory.getInstance().getCifrador("AES");
+				//aca lee el historial de mensajes que tenia guardado
 				for (MensajeFactory mensaje_leido : mensajes_cargados) {
 					try {
 						decifrador = CifradorFactory.getInstance().getCifrador(mensaje_leido.getMetodo());
 						String mensajeDecifrado = decifrador.descifrarMensaje(mensaje_leido.getContenido(), this.clave);
-						NuevoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensajeDecifrado);
+						ViejoMensajeRecibido(mensaje_leido.getEmisor(),mensaje_leido.getReceptor(),mensajeDecifrado);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-
-				String mensaje_descifrado;
+				//aca recibe los mensajes de cuando estaba desconectado
 				if(dataArray.length>3) {
 					System.out.println(dataArray);
 					int cant_mensajes_recibidos_desconectado = Integer.parseInt(dataArray[4]);
@@ -353,7 +343,7 @@ public class Usuario implements IFuncionalidadUsuario {
 							//mensaje esta encriptado
 							mensaje_pendiente_persistir = new MensajeFactory(mensaje,emisor,this.nickName,algoritmoEncriptacion);
 							//los guardo encriptados
-							this.persistencia.guardarMensaje(mensaje_pendiente_persistir);
+							this.persistencia_mensajes.guardarMensaje(mensaje_pendiente_persistir);
 							System.out.println("emisor: " + emisor + " mensaje: " + mensaje + " encriptacion: " + algoritmoEncriptacion);
 							//los desencripto para mostrarlos
 							try {
@@ -369,6 +359,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				}
 				EventoNotificacionRecibido(dataArray[2]);
 				VistaConectado();
+				this.latchConexion.countDown();
 			}
 			else {
 				System.out.println("Error de Inicio:"+dataArray[2]);
@@ -400,7 +391,7 @@ public class Usuario implements IFuncionalidadUsuario {
 				
 				//persistirlo encriptados. mensaje esta encriptado
 				MensajeFactory mensaje_guardar = new MensajeFactory(mensaje,nicknameEmisor,this.nickName,algoritmoEncriptacion);
-				this.persistencia.guardarMensaje(mensaje_guardar);
+				this.persistencia_mensajes.guardarMensaje(mensaje_guardar);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -420,7 +411,6 @@ public class Usuario implements IFuncionalidadUsuario {
 			break;
 		case "SOCKET_AGREGADO":
 			System.out.println("se agrego el socket en el servidor");
-			this.latchConexion.countDown();
 			break;
 		default:
 			System.out.println("Respuesta ("+respuesta+") desconocida");
@@ -430,14 +420,9 @@ public class Usuario implements IFuncionalidadUsuario {
 		
 	}
 	
-	
 	public void setearMetodoPersistencia(String metodo) {
 		this.metodo_persistencia = metodo;
 	}
-
-	/*public boolean isConectado() {
-		return Conectado;
-	}*/
 
 	private void EventoDirectorioRecibido() {
 		for (INotificable suscriptor: suscriptores) {
@@ -447,9 +432,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public void enviarRequestConsultaDirectorio(String nicknameConsulta) {
 		try {
-			//Socket socket = new Socket();
-			//InetAddress local = InetAddress.getLocalHost();
-			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeConsulta = "CONSULTA" + "`" + nickName + "`" + nicknameConsulta;
 			System.out.println(nickName + " CONSULTA POR " + nicknameConsulta);
@@ -461,7 +443,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	public void enviarRequestInicioSesion(String nickname) throws UsuarioConSesionActivaException, AgotoIntentosConectarException,UsuarioNoRegistradoException {
-		
 		obtenerNuevoServidorDesdeMonitor();
 		this.socket = new Socket();
         try {
@@ -496,9 +477,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	
 	public void enviarRequestMensaje(String mensaje, String destinatario) {
 		try {
-			//Socket socket = new Socket();
-			//InetAddress local = InetAddress.getLocalHost();
-			//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
 			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensaje + "`" + destinatario;
 			out.writeUTF(mensajeRegistro);
@@ -509,35 +487,31 @@ public class Usuario implements IFuncionalidadUsuario {
 	}
 	
 	//Nueva version con encriptacion, no saco la otra porque se rompe mensajes pendientes
-		public void enviarRequestMensaje(String mensaje, String destinatario, String algoritmoEncriptacion) {
-			try {
-				DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
-				ICifrador cifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
-				String mensajeEncriptado = cifrador.cifrarMensaje(mensaje, clave);
-				System.out.println("mensaje cifradooooo: " + mensajeEncriptado);
-				String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensajeEncriptado + "`" + destinatario + "`" + algoritmoEncriptacion;
-				System.out.println("Mensaje enviado : " + mensajeRegistro);
-				System.out.println(algoritmoEncriptacion);
-				out.writeUTF(mensajeRegistro);
+	public void enviarRequestMensaje(String mensaje, String destinatario, String algoritmoEncriptacion) {
+		try {
+			DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
+			ICifrador cifrador = CifradorFactory.getInstance().getCifrador(algoritmoEncriptacion);
+			String mensajeEncriptado = cifrador.cifrarMensaje(mensaje, clave);
+			System.out.println("mensaje cifradooooo: " + mensajeEncriptado);
+			String mensajeRegistro = "Enviar" + "`" + nickName + "`" + mensajeEncriptado + "`" + destinatario + "`" + algoritmoEncriptacion;
+			System.out.println("Mensaje enviado : " + mensajeRegistro);
+			System.out.println(algoritmoEncriptacion);
+			out.writeUTF(mensajeRegistro);
 				
-				MensajeFactory mensaje_enviar = new MensajeFactory(mensajeEncriptado, this.nickName, destinatario,algoritmoEncriptacion);
-				this.persistencia.guardarMensaje(mensaje_enviar);
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			MensajeFactory mensaje_enviar = new MensajeFactory(mensajeEncriptado, this.nickName, destinatario,algoritmoEncriptacion);
+			this.persistencia_mensajes.guardarMensaje(mensaje_enviar);	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+	}
 	
 	public void notificarDesconectado() {
 		DataOutputStream out;
 		if(this.socket != null) {
 			try {
-				//Socket socket = new Socket();
-				//InetAddress local = InetAddress.getLocalHost();
-				//socket.connect(new InetSocketAddress(local.getHostAddress(), this.puerto_servidor), 1000);
 				out = new DataOutputStream(this.socket.getOutputStream());
 				String mensaje = "DESCONEXION" + "`" + nickName;
 				out.writeUTF(mensaje);
@@ -549,40 +523,40 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 	}
 	
-	public boolean getEstaConectado() {
-		return this.estaConectado;
-	}
-	
-	/*@Override
-	public void NuevoMensajeRecibido(String Emisor, String texto) {
-		System.out.println("Recibimos mensaje: " + texto);
-		Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
-		c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje Ageno
+	private void ViejoMensajeRecibido(String Emisor,String Receptor, String texto) {
+		//cuando el emisor es nickname 
+		System.out.println("recibimos mensaje viejo: "+texto);
+		if(Receptor.equalsIgnoreCase(this.nickName)) {
+			Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
+			c.addMensajeViejo(Emisor, texto, false);			//Agregamos el mensaje ajeno
+		}else {
+			Conversacion c = getConversacion(Receptor);
+			c.addMensajeViejo(Emisor, texto, true);			
+		}
 		EventoNuevoMensajeRecibido();
-	}*/
+	}
 	
 	@Override
 	public void NuevoMensajeRecibido(String Emisor,String Receptor, String texto) {
 		//cuando el emisor es nickname 
-		System.out.println("AAAAA: recibimos mensaje:"+texto);
+		System.out.println("recibimos mensaje: " + texto);
 		if(Receptor.equalsIgnoreCase(this.nickName)) {
 			Conversacion c = getConversacion(Emisor);	//Buscamos la conversacion
 			c.addMensaje(Emisor, texto, false);			//Agregamos el mensaje ajeno
 		}else {
 			Conversacion c = getConversacion(Receptor);
-			c.addMensaje(Emisor, texto, false);			
+			c.addMensaje(Emisor, texto, true);			
 		}
 		EventoNuevoMensajeRecibido();
 	}
 	
-	private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
+	/*private void NuevoMensajeEnviado(IActualizarMensajes destinatario, String texto) {
 		destinatario.addMensaje(nickName,texto, true);
-	}
+	}*/
 	
 	public String getNickName() {
 		return nickName;
 	}
-
 
 	public String getIp() {
 		return ip;
@@ -602,14 +576,11 @@ public class Usuario implements IFuncionalidadUsuario {
 		}*/
 		return conversaciones;
 	}
-	
-
 
 	@Override
 	public void conectar(String nombre, String ip) throws IOException {
 		Iniciar(nombre, ip);
 	}
-//--- Conversaciones
 	
 	public Conversacion getConversacion(String nickname) {
 		for (Conversacion c : conversaciones) {
@@ -622,7 +593,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	    return nueva;
 	}
 	
-
 	public boolean ExisteConversacion(String nickname) {
 		for (Conversacion c : conversaciones) {
 	        if (c.getNickName().equals(nickname)) {
@@ -631,10 +601,6 @@ public class Usuario implements IFuncionalidadUsuario {
 	    }
 		return false;
 	}
-	
-//----AGENDA--------------------
-//----AGENDA-o-GestorDeContactos
-//----AGENDA--------------------
 	
 	@Override
 	public boolean EsContacto(String nickname) {
@@ -654,6 +620,7 @@ public class Usuario implements IFuncionalidadUsuario {
 		}
 		return null; 
 	}
+	
 	public void agendarContacto(Contacto usuario) {
 		//Agrega a la agenda alfabeticamente
 		if(!EsContacto(usuario.getNickName())) {
@@ -663,13 +630,13 @@ public class Usuario implements IFuncionalidadUsuario {
 	            i++;
 	        }
 	        agenda.add(i, usuario);
+	        persistencia_contactos.guardarContacto(usuario);
 		}
 	}
+	
 	@Override
 	public void agendarContacto(String nickname) {
 		agendarContacto(new Contacto(nickname));
 	}
-
-
 	
 }

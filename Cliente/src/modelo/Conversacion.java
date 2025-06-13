@@ -43,6 +43,10 @@ public class Conversacion implements IFuncionalidadConversacion{
 		cantidadMensajesSinLeer++;
 	}
 	
+	public void addMensajeViejo(String nombreEmisor, String texto, boolean elMensajeEsPropio) {
+		mensajes.add(new Mensaje(nombreEmisor,texto, elMensajeEsPropio));
+	}
+	
 	public ArrayList<Mensaje> getMensajes() {
 		return mensajes;
 	}

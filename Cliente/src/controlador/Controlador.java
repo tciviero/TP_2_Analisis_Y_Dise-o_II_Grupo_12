@@ -2,6 +2,7 @@ package controlador;
 
 import java.awt.event.ActionEvent;
 import modelo.usuario.MetodoPersistenciaUsuarios;
+import modelo.usuario.Usuario;
 import vista.IVista;
 import java.awt.event.ActionListener;
 import java.io.DataOutputStream;
@@ -27,8 +28,8 @@ import excepciones.UsuarioNoRegistradoException;
 import modelo.Conversacion;
 import modelo.IVerConversacion;
 import modelo.Contacto.Contacto;
-import modelo.usuario.IFuncionalidadUsuario;
 import modelo.usuario.Usuario;
+import modelo.usuario.IFuncionalidadUsuario;
 import modelo.usuario.UsuarioYEstado;
 import vista.VentanaChat;
 
@@ -65,11 +66,9 @@ public class Controlador implements ActionListener, ListSelectionListener{
 		Usuario.getInstancia().notificarDesconectado();
 	}
 	
-	
 	public IVista getVista(){
 		return this.vista;
 	}
-	
 	
 	public void UsuarioExistente(String ip, int puerto) throws IOException {
 		try(Socket socket = new Socket()){
@@ -105,7 +104,6 @@ public class Controlador implements ActionListener, ListSelectionListener{
         }
 		return null;
 	}
-	
 
 	private void registrar() {
 		String nombre = this.vista.getNickNameUsuarioText();
@@ -151,6 +149,8 @@ public class Controlador implements ActionListener, ListSelectionListener{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		Usuario.getInstancia().esperarConexion();
+		vista.ActualizaListaContactos();
 	}
 	
 	private void agendar() {

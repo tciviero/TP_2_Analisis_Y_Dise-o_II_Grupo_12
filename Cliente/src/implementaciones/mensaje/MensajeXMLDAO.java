@@ -1,4 +1,4 @@
-package implementaciones;
+package implementaciones.mensaje;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;

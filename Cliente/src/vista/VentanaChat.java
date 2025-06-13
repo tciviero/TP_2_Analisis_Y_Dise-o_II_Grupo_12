@@ -511,7 +511,6 @@ public class VentanaChat extends JFrame implements IVista  {
 		this.modeloConversacion.clear();
 		for (Conversacion c: Usuario.getInstancia().getConversaciones()) {
 			modeloConversacion.addElement(c);
-
 		}
 	}
 	
@@ -524,9 +523,7 @@ public class VentanaChat extends JFrame implements IVista  {
 			CargarChat(ConversacionAbierta);
 		}
 	}
-
-
-
+	
 //-----------CHAT-----------	
 	
 /*	public void CargarChat(String mensajes) {
@@ -548,7 +545,6 @@ public class VentanaChat extends JFrame implements IVista  {
 	@Override
 	public void OnFalloEnvioMensaje() {
 		new JNotification("Error de conexión! Reintente");
-		
 	}
 	
 	@Override
@@ -600,34 +596,27 @@ public class VentanaChat extends JFrame implements IVista  {
 		revalidate();
 	}
 
-
 	@Override
 	public void verContactos() {
 		setContentPane(panelVentanaContactos);
 		setBounds(50,50,240,695);
-		revalidate();
-		
+		revalidate();	
 	}
-
 
 	@Override
 	public void volverAChat() {
 		conectado();
 	}
 
-
 	@Override
 	public String getSearchText() {
 		return this.tecladoDirectorio.getText();
 	}
 
-
 	@Override
 	public void onUsuarioAgendadoExitosamente() {
 		new JNotification("Usuario agendando!");
-		
 	}
-
 
 	@Override
 	public String getOpcionEncriptacionText() {
@@ -642,8 +631,6 @@ public class VentanaChat extends JFrame implements IVista  {
 			return "DES";
 		}
 		return null;
-	}
-	
-	
+	}	
 
 }
